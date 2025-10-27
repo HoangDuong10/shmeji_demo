@@ -41,6 +41,7 @@ import com.stevdza_san.sprite.component.SpriteView
 import com.example.demoshemij.domain.SpriteSheet
 import com.example.demoshemij.domain.SpriteSpec
 import com.example.demoshemij.domain.SpriteFlip
+import com.example.demoshemij.domain.SpriteManager
 import com.example.demoshemij.domain.SpriteState
 import com.example.demoshemij.domain.rememberSpriteState
 import com.stevdza_san.sprite.util.getScreenWidth
@@ -104,7 +105,7 @@ fun MainScreen(
     onStop : () -> Unit = { }
 ) {
     var isServiceRunning by remember { mutableStateOf(false) }
-
+    var isAnimationRunning by remember { mutableStateOf(false) }
     Column(
         modifier = modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
@@ -136,7 +137,7 @@ fun MainScreen(
 //                    onStopService()
 //                    isServiceRunning = false
 //                }
-                onStop()
+                SpriteManager.stopAnimation()
             },
             enabled = isServiceRunning
         ) {

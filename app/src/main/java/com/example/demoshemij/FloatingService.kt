@@ -25,6 +25,7 @@ import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.example.demoshemij.domain.SpriteSpec
 import com.example.demoshemij.domain.SpriteFlip
+import com.example.demoshemij.domain.SpriteManager
 import com.example.demoshemij.domain.SpriteSheet
 import com.example.demoshemij.domain.rememberSpriteState
 import kotlinx.coroutines.Job
@@ -107,9 +108,17 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                         imageRes = R.drawable.sprite_normal
                     )
                 )
-
+                SpriteManager.setSpriteState(spriteState)
                 LaunchedEffect(Unit) {
                     spriteState.start()
+                }
+                LaunchedEffect(Unit) {
+                    SpriteManager.stopSignal.collect { shouldStop ->
+                        if (shouldStop) {
+                            spriteState.stop()
+//                            SpriteManager.resetStopSignal() // Đặt lại tín hiệu
+                        }
+                    }
                 }
 
                 MovingSprite(spriteState, spriteSpec, spriteFlip = spriteFlip, stop = {spriteState.stop()})
