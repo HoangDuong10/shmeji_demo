@@ -1,4 +1,4 @@
-package com.stevdza_san.sprite.domain
+package com.example.demoshemij.domain
 
 /**
  * This class is created to represent various screen dimensions in

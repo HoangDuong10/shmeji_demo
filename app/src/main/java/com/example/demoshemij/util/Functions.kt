@@ -1,6 +1,6 @@
 package com.example.demoshemij.util
 
-import com.stevdza_san.sprite.domain.ScreenCategory
+import com.example.demoshemij.domain.ScreenCategory
 
 internal fun Float.parseCategory(): ScreenCategory {
     return when (this) {

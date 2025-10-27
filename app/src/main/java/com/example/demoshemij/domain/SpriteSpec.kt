@@ -2,10 +2,8 @@ package com.example.demoshemij.domain
 
 import androidx.compose.runtime.Composable
 import com.example.demoshemij.util.parseCategory
-import com.stevdza_san.sprite.domain.ScreenCategory
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.res.imageResource
-import com.stevdza_san.sprite.domain.SpriteSheet
 
 
 /**

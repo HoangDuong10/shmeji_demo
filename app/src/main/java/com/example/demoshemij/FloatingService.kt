@@ -9,20 +9,13 @@ import android.os.Build
 import android.util.Log
 import android.view.*
 import androidx.annotation.RequiresApi
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.setViewTreeLifecycleOwner
@@ -31,15 +24,13 @@ import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.example.demoshemij.domain.SpriteSpec
-import com.example.demoshemij.ui.theme.DemoShemijTheme
-import com.stevdza_san.sprite.domain.SpriteFlip
-import com.stevdza_san.sprite.domain.SpriteSheet
-import com.stevdza_san.sprite.domain.rememberSpriteState
+import com.example.demoshemij.domain.SpriteFlip
+import com.example.demoshemij.domain.SpriteSheet
+import com.example.demoshemij.domain.rememberSpriteState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
-import kotlin.math.max
 import kotlin.math.min
 import kotlin.random.Random
 
@@ -121,7 +112,7 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                     spriteState.start()
                 }
 
-                MovingSprite(spriteState, spriteSpec, spriteFlip = spriteFlip)
+                MovingSprite(spriteState, spriteSpec, spriteFlip = spriteFlip, stop = {spriteState.stop()})
 
                 // Gán state này ra ngoài scope để service có thể điều khiển
                 currentFlipUpdater = { newFlip ->
@@ -182,7 +173,7 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                     // 👇 Khi thả tay: rơi xuống đáy rồi tiếp tục di chuyển
                     lifecycleScope.launch {
                         fallDown(params)
-                        animateSpriteWindow(params)
+                        animateSpriteWindow11(params)
                     }
                     true
                 }
@@ -202,6 +193,7 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
         isMovingRight: Boolean,
         onComplete: () -> Unit = {}
     ) {
+        // Giữ nguyên mã gốc của bạn
         val start = if (axis == "x") params.x else params.y
         val distance = target - start
         val steps = 60
@@ -216,7 +208,7 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
             val fraction = (step + 1).toFloat() / steps
             val value = start + (distance * fraction).toInt()
             if (axis == "x") params.x = value else params.y = value
-            Log.d("duonghx", "animateParamTo ${params.x} to ${params.y}")
+//        Log.d("duonghx", "animateParamTo ${params.x} to ${params.y}")
             try {
                 windowManager.updateViewLayout(floatingView, params)
             } catch (e: Exception) {
@@ -253,105 +245,142 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                 var isMovingRight = true // Theo dõi hướng di chuyển ngang
 
                 while (!isDragging) {
+                    // Thêm biến kiểm tra vị trí góc để dễ debug và xử lý
+                    val isAtTop = params.y <= margin
+                    val isAtBottom = params.y >= screenHeight - spriteHeight - margin
+                    val isAtLeft = params.x <= 0
+                    val isAtRight = params.x >= screenWidth - spriteWidth - margin
+
                     // Chọn tỷ lệ dựa trên vị trí (cạnh trái, cạnh phải, hoặc ở giữa)
                     val action = Random.nextInt(100)
 
                     when {
                         // Cạnh trái: lên 10%, xuống 85%, nhảy 5%
-                        params.x <= 0 -> {
+                        isAtLeft -> {  // Sử dụng isAtLeft thay vì params.x <= 0 để nhất quán
                             when {
                                 action < 10 -> { // 0-9: 10% - Di chuyển lên
+                                    Log.d("duonghx", "canh trai len: ${params.x}, ${params.y}")
                                     val maxUpDistance = params.y - margin // Khoảng cách tối đa có thể đi lên
-                                    if (maxUpDistance > 180) { // Chỉ di chuyển nếu đủ khoảng cách
-                                        val targetY = params.y - Random.nextInt(180, min(200, maxUpDistance)) // Di chuyển lên 180-200px
+                                    if (maxUpDistance > 180) {
+                                        val targetY = params.y - Random.nextInt(180, min(200, maxUpDistance))
                                         animateParamTo(params, "y", targetY, 2000, isMovingRight)
                                     } else if (maxUpDistance > 0) {
-                                        // Nếu khoảng cách nhỏ, di chuyển lên hết khoảng cách còn lại
                                         val targetY = margin
                                         animateParamTo(params, "y", targetY, 2000, isMovingRight)
+                                    } else {
+                                        // Đã ở top (góc trên trái), buộc di chuyển ngang sang phải trên cạnh trên
+                                        val targetX = screenWidth - spriteWidth - margin
+                                        animateParamTo(params, "x", targetX, 2000, true)  // isMovingRight = true, không ! vì đổi từ up sang right
                                     }
                                 }
                                 action < 95 -> { // 10-94: 85% - Di chuyển xuống
-                                    val maxDownDistance = screenHeight - spriteHeight - margin - params.y // Khoảng cách tối đa đi xuống
-                                    if (maxDownDistance > 180) { // Chỉ di chuyển nếu đủ khoảng cách
-                                        val targetY = params.y + Random.nextInt(180, min(200, maxDownDistance)) // Di chuyển xuống 180-200px
+                                    Log.d("duonghx", "canh trai xuong: ${params.x}, ${params.y}")
+                                    val maxDownDistance = screenHeight - spriteHeight - margin - params.y
+                                    if (maxDownDistance > 180) {
+                                        val targetY = params.y + Random.nextInt(180, min(200, maxDownDistance))
                                         animateParamTo(params, "y", targetY, 2000, isMovingRight)
                                     } else if (maxDownDistance > 0) {
-                                        // Nếu khoảng cách nhỏ, di chuyển xuống hết khoảng cách còn lại
                                         val targetY = screenHeight - spriteHeight - margin
                                         animateParamTo(params, "y", targetY, 2000, isMovingRight)
+                                    } else {
+                                        // Đã ở bottom (góc dưới trái), buộc di chuyển ngang sang phải trên cạnh dưới
+                                        val targetX = screenWidth - spriteWidth - margin
+                                        animateParamTo(params, "x", targetX, 2000, true)  // isMovingRight = true, không ! vì đổi từ down sang right
                                     }
                                 }
-                                else -> { // 95-99: 5% - Nhảy sang cạnh đối diện
+                                else -> { // 95-99: 5% - Nhảy sang cạnh phải
+                                    Log.d("duonghx", "canh trai nhay: ${params.x}, ${params.y}")
                                     val targetX = screenWidth - spriteWidth - margin
                                     animateParamTo(params, "x", targetX, 2000, isMovingRight) {
-                                        isMovingRight = !isMovingRight // Đổi hướng sau khi nhảy
+                                        isMovingRight = !isMovingRight // Giữ nguyên: Đổi hướng sau nhảy
                                     }
                                 }
                             }
                         }
                         // Cạnh phải: lên 85%, xuống 10%, nhảy 5%
-                        params.x >= screenWidth - spriteWidth - margin -> {
+                        isAtRight -> {  // Sử dụng isAtRight
                             when {
                                 action < 85 -> { // 0-84: 85% - Di chuyển lên
-                                    val maxUpDistance = params.y - margin // Khoảng cách tối đa có thể đi lên
-                                    if (maxUpDistance > 180) { // Chỉ di chuyển nếu đủ khoảng cách
-                                        val targetY = params.y - Random.nextInt(180, min(200, maxUpDistance)) // Di chuyển lên 180-200px
+                                    Log.d("duonghx", "canh phai len: ${params.x}, ${params.y}")
+                                    val maxUpDistance = params.y - margin
+                                    if (maxUpDistance > 180) {
+                                        val targetY = params.y - Random.nextInt(180, min(200, maxUpDistance))
                                         animateParamTo(params, "y", targetY, 2000, isMovingRight)
                                     } else if (maxUpDistance > 0) {
-                                        // Nếu khoảng cách nhỏ, di chuyển lên hết khoảng cách còn lại
                                         val targetY = margin
                                         animateParamTo(params, "y", targetY, 2000, isMovingRight)
+                                    } else {
+                                        // Đã ở top (góc trên phải), buộc di chuyển ngang sang trái trên cạnh trên
+                                        val targetX = 0
+                                        animateParamTo(params, "x", targetX, 2000, false)  // isMovingRight = false, không ! vì đổi từ up sang left
                                     }
                                 }
                                 action < 95 -> { // 85-94: 10% - Di chuyển xuống
-                                    val maxDownDistance = screenHeight - spriteHeight - margin - params.y // Khoảng cách tối đa đi xuống
-                                    if (maxDownDistance > 180) { // Chỉ di chuyển nếu đủ khoảng cách
-                                        val targetY = params.y + Random.nextInt(180, min(200, maxDownDistance)) // Di chuyển xuống 180-200px
+                                    Log.d("duonghx", "canh phai xuong: ${params.x}, ${params.y}")
+                                    val maxDownDistance = screenHeight - spriteHeight - margin - params.y
+                                    if (maxDownDistance > 180) {
+                                        val targetY = params.y + Random.nextInt(180, min(200, maxDownDistance))
                                         animateParamTo(params, "y", targetY, 2000, isMovingRight)
                                     } else if (maxDownDistance > 0) {
-                                        // Nếu khoảng cách nhỏ, di chuyển xuống hết khoảng cách còn lại
                                         val targetY = screenHeight - spriteHeight - margin
                                         animateParamTo(params, "y", targetY, 2000, isMovingRight)
+                                    } else {
+                                        // Đã ở bottom (góc dưới phải), buộc di chuyển ngang sang trái trên cạnh dưới
+                                        val targetX = 0
+                                        animateParamTo(params, "x", targetX, 2000, false)  // isMovingRight = false, không ! vì đổi từ down sang left
                                     }
                                 }
-                                else -> { // 95-99: 5% - Nhảy sang cạnh đối diện
+                                else -> { // 95-99: 5% - Nhảy sang cạnh trái
+                                    Log.d("duonghx", "canh phai nhay: ${params.x}, ${params.y}")
                                     val targetX = 0
                                     animateParamTo(params, "x", targetX, 2000, isMovingRight) {
-                                        isMovingRight = !isMovingRight // Đổi hướng sau khi nhảy
+                                        isMovingRight = !isMovingRight // Giữ nguyên: Đổi hướng sau nhảy
                                     }
                                 }
                             }
                         }
-                        // Ở giữa: giữ tỷ lệ mặc định (lên 10%, xuống 85%, nhảy 5%)
+                        // Ở giữa: lên 10%, xuống 85%, nhảy 5%
                         else -> {
                             when {
                                 action < 10 -> { // 0-9: 10% - Di chuyển lên
-                                    val maxUpDistance = params.y - margin // Khoảng cách tối đa có thể đi lên
-                                    if (maxUpDistance > 180) { // Chỉ di chuyển nếu đủ khoảng cách
-                                        val targetY = params.y - Random.nextInt(180, min(200, maxUpDistance)) // Di chuyển lên 180-200px
+                                    Log.d("duonghx", "giua len: ${params.x}, ${params.y}")
+                                    val maxUpDistance = params.y - margin
+                                    if (maxUpDistance > 180) {
+                                        val targetY = params.y - Random.nextInt(180, min(200, maxUpDistance))
                                         animateParamTo(params, "y", targetY, 2000, isMovingRight)
                                     } else if (maxUpDistance > 0) {
-                                        // Nếu khoảng cách nhỏ, di chuyển lên hết khoảng cách còn lại
                                         val targetY = margin
                                         animateParamTo(params, "y", targetY, 2000, isMovingRight)
+                                    } else {
+                                        // Đã ở top (hiếm ở giữa, nhưng xử lý), di chuyển ngang theo isMovingRight
+                                        val targetX = if (isMovingRight) screenWidth - spriteWidth - margin else 0
+                                        animateParamTo(params, "x", targetX, 2000, isMovingRight) {
+                                            isMovingRight = !isMovingRight // Đổi hướng sau khi đến
+                                        }
                                     }
                                 }
                                 action < 95 -> { // 10-94: 85% - Di chuyển xuống
-                                    val maxDownDistance = screenHeight - spriteHeight - margin - params.y // Khoảng cách tối đa đi xuống
-                                    if (maxDownDistance > 180) { // Chỉ di chuyển nếu đủ khoảng cách
-                                        val targetY = params.y + Random.nextInt(180, min(200, maxDownDistance)) // Di chuyển xuống 180-200px
+                                    Log.d("duonghx", "giua xuong: ${params.x}, ${params.y}")
+                                    val maxDownDistance = screenHeight - spriteHeight - margin - params.y
+                                    if (maxDownDistance > 180) {
+                                        val targetY = params.y + Random.nextInt(180, min(200, maxDownDistance))
                                         animateParamTo(params, "y", targetY, 2000, isMovingRight)
                                     } else if (maxDownDistance > 0) {
-                                        // Nếu khoảng cách nhỏ, di chuyển xuống hết khoảng cách còn lại
                                         val targetY = screenHeight - spriteHeight - margin
                                         animateParamTo(params, "y", targetY, 2000, isMovingRight)
+                                    } else {
+                                        // Đã ở bottom, di chuyển ngang theo isMovingRight
+                                        val targetX = if (isMovingRight) screenWidth - spriteWidth - margin else 0
+                                        animateParamTo(params, "x", targetX, 2000, isMovingRight) {
+                                            isMovingRight = !isMovingRight // Đổi hướng sau khi đến
+                                        }
                                     }
                                 }
                                 else -> { // 95-99: 5% - Nhảy sang cạnh đối diện
+                                    Log.d("duonghx", "giua nhay: ${params.x}, ${params.y}")
                                     val targetX = if (isMovingRight) screenWidth - spriteWidth - margin else 0
                                     animateParamTo(params, "x", targetX, 2000, isMovingRight) {
-                                        isMovingRight = !isMovingRight // Đổi hướng sau khi nhảy
+                                        isMovingRight = !isMovingRight // Đổi hướng sau nhảy
                                     }
                                 }
                             }
@@ -478,7 +507,7 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
             val fraction = (step + 1).toFloat() / steps
             val value = start + (distance * fraction).toInt()
             if (axis == "x") params.x = value else params.y = value
-            Log.d("duonghx","animateParamTo1 ${params.x} to ${params.y}")
+//            Log.d("duonghx","animateParamTo1 ${params.x} to ${params.y}")
             try {
                 windowManager.updateViewLayout(floatingView, params)
             } catch (e: Exception) {

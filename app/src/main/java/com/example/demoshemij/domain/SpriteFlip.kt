@@ -1,4 +1,4 @@
-package com.stevdza_san.sprite.domain
+package com.example.demoshemij.domain
 
 /**
  * Enum class representing the possible flip directions for a sprite.

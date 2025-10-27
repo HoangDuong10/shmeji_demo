@@ -17,10 +17,10 @@ import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
-import com.stevdza_san.sprite.domain.ScreenCategory
-import com.stevdza_san.sprite.domain.SpriteFlip
+import com.example.demoshemij.domain.ScreenCategory
+import com.example.demoshemij.domain.SpriteFlip
 import com.example.demoshemij.domain.SpriteSpec
-import com.stevdza_san.sprite.domain.SpriteState
+import com.example.demoshemij.domain.SpriteState
 
 /**
  * Composable function which is used to display and animate the

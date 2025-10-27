@@ -1,5 +1,6 @@
-package com.stevdza_san.sprite.domain
+package com.example.demoshemij.domain
 
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import kotlinx.coroutines.CoroutineScope
@@ -73,6 +74,7 @@ class SpriteState(
      * Stops the sprite animation and resets the current frame to the initial frame.
      * */
     fun stop() {
+        Log.d("SpriteState", "Animation stopped")
         _isRunning.value = false
     }
 
