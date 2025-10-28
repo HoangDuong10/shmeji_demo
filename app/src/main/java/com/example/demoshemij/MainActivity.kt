@@ -167,18 +167,15 @@ fun MovingSprite(
     spriteSpec: SpriteSpec,
     spriteFlip : SpriteFlip?= null,
     modifier: Modifier = Modifier,
-    stop :() -> Unit = {}
+    stop :() -> Unit = {},
+    selectedRow : Int? = null
 ) {
     SpriteView(
         modifier = modifier,
         spriteState = spriteState,
         spriteSpec = spriteSpec,
-        spriteFlip = spriteFlip
+        spriteFlip = spriteFlip,
+        selectedRow = selectedRow
     )
 
-    DisposableEffect(Unit) {
-        onDispose {
-            stop() // Gọi hàm stop khi composable bị hủy
-        }
-    }
 }

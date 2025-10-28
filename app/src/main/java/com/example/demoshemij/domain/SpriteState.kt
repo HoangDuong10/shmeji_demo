@@ -10,6 +10,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /**
@@ -38,8 +39,11 @@ class SpriteState(
     private val _currentFrame = MutableStateFlow(value = 0)
     val currentFrame: StateFlow<Int> get() = _currentFrame
 
-    private var _isRunning = MutableStateFlow(false)
-    val isRunning: StateFlow<Boolean> = _isRunning
+    private val _selectedRow = MutableStateFlow<Int?>(null) // null = tất cả frame
+    val selectedRow: StateFlow<Int?> = _selectedRow.asStateFlow()
+
+    private val _isRunning = MutableStateFlow(false)
+    val isRunning: StateFlow<Boolean> = _isRunning.asStateFlow()
 
     private val scope = CoroutineScope(
         context = Dispatchers.Default + SupervisorJob()
@@ -51,12 +55,28 @@ class SpriteState(
                 if (running) {
                     // Animating sprite images
                     while (_isRunning.value) {
+                        val selectedRowValue = _selectedRow.value
+                        if (selectedRowValue != null) {
+                            // Giới hạn frame trong hàng được chọn
+                            val startFrame = selectedRowValue * framesPerRow
+                            val endFrame = startFrame + framesPerRow - 1
+                            _currentFrame.value = if (_currentFrame.value >= endFrame) {
+                                startFrame // Quay lại frame đầu tiên của hàng
+                            } else {
+                                _currentFrame.value + 1 // Tăng frame
+                            }
+                            Log.d("SpriteState", "SelectedRow: $selectedRowValue, CurrentFrame: ${_currentFrame.value}")
+                        } else {
+                            // Hiển thị tất cả frame
+                            _currentFrame.value = (_currentFrame.value + 1) % totalFrames
+                            Log.d("SpriteState", "All Frames, CurrentFrame: ${_currentFrame.value}")
+                        }
                         delay(animationSpeed)
-                        _currentFrame.value = (_currentFrame.value + 1) % totalFrames
                     }
                 } else {
-                    // Reset the sprite frame to it's initial position
-                    _currentFrame.value = 0
+                    // Reset the sprite frame to its initial position
+                    _currentFrame.value = _selectedRow.value?.let { it * framesPerRow } ?: 0
+                    Log.d("SpriteState", "Animation stopped, CurrentFrame: ${_currentFrame.value}")
                 }
             }
         }
@@ -65,14 +85,27 @@ class SpriteState(
     /**
      * Starts the sprite animation by setting the `isRunning` state to `true`, causing
      * frames to update based on the specified animation speed.
-     * */
+     */
     fun start() {
         _isRunning.value = true
     }
 
     /**
-     * Stops the sprite animation and resets the current frame to the initial frame.
-     * */
+     * Sets the row to limit animation to frames in that row. If null, animation runs through all frames.
+     * @param row The row index (0-based) to limit animation to, or null for all frames.
+     */
+    fun setRow(row: Int?) {
+        _selectedRow.value = row?.coerceIn(0, totalFrames / framesPerRow - 1)
+        // Reset currentFrame to the first frame of the selected row
+        if (row != null) {
+            _currentFrame.value = row * framesPerRow
+            Log.d("SpriteState", "Set row to $row, CurrentFrame: ${_currentFrame.value}")
+        }
+    }
+
+    /**
+     * Stops the sprite animation and resets the current frame to the initial frame of the current row (if selected).
+     */
     fun stop() {
         Log.d("SpriteState", "Animation stopped")
         _isRunning.value = false
@@ -81,7 +114,7 @@ class SpriteState(
     /**
      * Cancels the coroutine scope used by this class, releasing any resources and stopping
      * any ongoing animations.
-     * */
+     */
     fun cleanup() {
         scope.cancel()
     }

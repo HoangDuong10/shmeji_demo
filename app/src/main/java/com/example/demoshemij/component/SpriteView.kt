@@ -46,17 +46,24 @@ fun SpriteView(
     modifier: Modifier = Modifier,
     spriteState: SpriteState,
     spriteSpec: SpriteSpec,
-    spriteFlip: SpriteFlip? = null
+    spriteFlip: SpriteFlip? = null,
+    selectedRow: Int? = null // Thêm tham số để chọn hàng (null = tất cả frame)
 ) {
     val spriteImage = spriteSpec.imageBitmap
     val currentFrame = spriteState.currentFrame.collectAsState().value
-    // Get the row and column position based on the current frame
+
+    // Tính toán row và column dựa trên selectedRow
     val row by rememberUpdatedState(
-        newValue = currentFrame / spriteState.framesPerRow
+        newValue = selectedRow ?: (currentFrame / spriteState.framesPerRow)
     )
     val column by rememberUpdatedState(
-        newValue = currentFrame % spriteState.framesPerRow
+        newValue = if (selectedRow != null) {
+            currentFrame % spriteState.framesPerRow // Chỉ lấy cột trong hàng được chọn
+        } else {
+            currentFrame % spriteState.framesPerRow // Logic gốc
+        }
     )
+
     val frameSize by remember {
         derivedStateOf {
             IntSize(
@@ -119,7 +126,7 @@ fun SpriteView(
                     )
                 }
             }
-        ){
+        ) {
             drawImage(
                 image = spriteImage,
                 srcOffset = frameOffset,
