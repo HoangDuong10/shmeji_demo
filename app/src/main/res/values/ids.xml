@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- res/values/ids.xml -->
+<resources>
+    <item name="sprite_flip_updater" type="id" />
+    <item name="sprite_state_updater" type="id" />
+    <item name="sprite_flip_tag" type="id" />
+    <item name="sprite_state_tag" type="id" />
+</resources>

@@ -15,11 +15,15 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -47,6 +51,7 @@ import com.example.demoshemij.domain.rememberSpriteState
 import com.stevdza_san.sprite.util.getScreenWidth
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -55,22 +60,21 @@ class MainActivity : ComponentActivity() {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     MainScreen(
                         modifier = Modifier.padding(innerPadding),
-                        onStartService = { startFloatingService() },
-                        onStopService = { stopFloatingService() },
-                        checkOverlayPermission = { checkAndRequestOverlayPermission() },
-                        onStop = {}
+                        onAddSprite = { startFloatingService("ADD_SPRITE") },
+                        onStopAll = { startFloatingService("STOP_ALL") },
+                        checkOverlayPermission = { checkAndRequestOverlayPermission() }
                     )
-//                    MovingSpriteAroundScreen(modifier = Modifier.padding(innerPadding))
                 }
             }
         }
     }
 
+    // Kiểm tra và xin quyền overlay
     private fun checkAndRequestOverlayPermission(): Boolean {
         return if (!Settings.canDrawOverlays(this)) {
             val intent = Intent(
                 Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                Uri.parse("package:${this.packageName}")
+                Uri.parse("package:${packageName}")
             )
             startActivity(intent)
             false
@@ -79,88 +83,74 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun startFloatingService() {
-        if (Settings.canDrawOverlays(this)) {
-            val serviceIntent = Intent(this, FloatingSpriteService::class.java)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(serviceIntent)
-            } else {
-                startService(serviceIntent)
+    // Gửi lệnh đến service
+    private fun startFloatingService(action: String) {
+        if (action == "ADD_SPRITE" && !Settings.canDrawOverlays(this)) return
+
+        val serviceIntent = Intent(this, FloatingSpriteService::class.java).apply {
+            this.action = action
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(serviceIntent)
+        } else {
+            startService(serviceIntent)
+        }
+    }
+
+    @Composable
+    fun MainScreen(
+        modifier: Modifier = Modifier,
+        onAddSprite: () -> Unit,
+        onStopAll: () -> Unit,
+        checkOverlayPermission: () -> Boolean
+    ) {
+        var isServiceRunning by remember { mutableStateOf(false) }
+
+        Column(
+            modifier = modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = if (isServiceRunning) "Có sprite đang chạy!" else "Chưa có sprite",
+                modifier = Modifier.padding(16.dp),
+                style = MaterialTheme.typography.headlineSmall
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // NÚT THÊM SPRITE
+            Button(
+                onClick = {
+                    if (checkOverlayPermission()) {
+                        onAddSprite()
+                        isServiceRunning = true
+                    }
+                },
+                enabled = true // Luôn bật, vì thêm bao nhiêu cũng được
+            ) {
+                Text("Thêm Sprite")
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // NÚT TẮT TẤT CẢ
+            Button(
+                onClick = {
+                    onStopAll()
+                    isServiceRunning = false
+                },
+                enabled = isServiceRunning,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                Text("Tắt Tất Cả")
             }
         }
     }
-
-    private fun stopFloatingService() {
-        val serviceIntent = Intent(this, FloatingSpriteService::class.java)
-        stopService(serviceIntent)
-    }
 }
-
-@Composable
-fun MainScreen(
-    modifier: Modifier = Modifier,
-    onStartService: () -> Unit,
-    onStopService: () -> Unit,
-    checkOverlayPermission: () -> Boolean,
-    onStop : () -> Unit = { }
-) {
-    var isServiceRunning by remember { mutableStateOf(false) }
-    var isAnimationRunning by remember { mutableStateOf(false) }
-    Column(
-        modifier = modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = if (isServiceRunning) "Sprite đang chạy!" else "Sprite đã dừng",
-            modifier = Modifier.padding(16.dp)
-        )
-        Button(
-            onClick = {
-                if (!isServiceRunning) {
-                    if (checkOverlayPermission()) {
-                        onStartService()
-                        isServiceRunning = true
-                    } else {
-                        // Hiển thị thông báo yêu cầu quyền nếu cần
-//                        Text("Vui lòng cấp quyền overlay!")
-                    }
-                }
-            },
-            enabled = !isServiceRunning
-        ) {
-            Text("Bật Sprite")
-        }
-        Button(
-            onClick = {
-//                if (isServiceRunning) {
-//                    onStopService()
-//                    isServiceRunning = false
-//                }
-                SpriteManager.stopAnimation()
-            },
-            enabled = isServiceRunning
-        ) {
-            Text("Tắt Sprite")
-        }
-    }
-}
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    DemoShemijTheme {
-        Greeting("Android")
-    }
-}
-
 @Composable
 fun MovingSprite(
     spriteState: SpriteState,
