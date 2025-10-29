@@ -52,10 +52,12 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
         var initialTouchY: Float = 0f,
         var initialX: Int = 0,
         var initialY: Int = 0,
+
         var moveJob: Job? = null,
         val flipUpdater: (SpriteFlip?) -> Unit,
-        val stateUpdater: (Int?) -> Unit
+        val stateUpdater: (SpriteState1) -> Unit
     )
+
 
     private val spriteList = mutableListOf<SpriteInstance>()
     private val savedStateRegistryController = SavedStateRegistryController.create(this)
@@ -118,7 +120,7 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
 
     private fun addNewSprite() {
         val flipState = mutableStateOf<SpriteFlip?>(null)
-        val spriteState = mutableStateOf<Int?>(null)
+        val spriteState = mutableStateOf<SpriteState1?>(null)
 
         val newView = ComposeView(this).apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
@@ -128,8 +130,7 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
             setContent {
                 setContent {
                     SpriteContent(
-                        spriteFlip = flipState,
-                        selectedRow = spriteState,
+
                         onFlipUpdate = { },
                         onStateUpdate = {  }
                     )
@@ -158,10 +159,10 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
             view = newView,
             params = params,
             flipUpdater = { flip ->
-                flipState.value = flip
+                SpriteController.flipState.value = flip
             },
             stateUpdater = { state ->
-                spriteState.value = state
+                SpriteController.spriteState.value = state
             }
         )
 
@@ -191,7 +192,7 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                     val (screenWidth, screenHeight) = getScreenSize(this)
                     val spriteWidth = instance.view.width
                     val spriteHeight = instance.view.height
-
+instance.stateUpdater.invoke(SpriteState1.Touch)
 // Tính toán vị trí mới
                     var newX = (instance.initialX + (event.rawX - instance.initialTouchX)).toInt()
                     var newY = (instance.initialY + (event.rawY - instance.initialTouchY)).toInt()
@@ -212,7 +213,8 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
             MotionEvent.ACTION_UP -> {
                 instance.isDragging = false
                 lifecycleScope.launch {
-                    fallDown(instance)  // Truyền instance
+                    fallDown(instance)
+                        delay(750L)
                     startSpriteAnimation(instance)
                 }
                 return true
@@ -223,10 +225,8 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
 
     @Composable
     fun SpriteContent(
-        spriteFlip: State<SpriteFlip?>,
-        selectedRow: State<Int?>,
         onFlipUpdate: (SpriteFlip?) -> Unit,
-        onStateUpdate: (Int?) -> Unit
+        onStateUpdate: (SpriteState1) -> Unit
     ) {
         val spriteState = rememberSpriteState(
             totalFrames = 9,
@@ -257,12 +257,15 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
 //            onStateUpdate(selectedRow.value)
 //        }
 
-        MovingSprite(
-            spriteState = spriteState,
-            spriteSpec = spriteSpec,
-            spriteFlip = spriteFlip.value,
-            selectedRow = selectedRow.value
+//        MovingSprite(
+//            spriteState = spriteState,
+//            spriteSpec = spriteSpec,
+//            spriteFlip = spriteFlip.value,
+//            selectedRow = selectedRow.value
+//        )
+        ShimejiSprite(
         )
+
     }
 
     private fun startSpriteAnimation(instance: SpriteInstance) {
@@ -332,7 +335,7 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                 val spriteHeight =    instance.view.height
                 val margin = 0
                 var isMovingRight = true // Theo dõi hướng di chuyển ngang
-                instance.stateUpdater.invoke(null)
+                instance.stateUpdater.invoke(SpriteState1.Idle)
                 while (!   instance.isDragging) {
                     // Thêm biến kiểm tra vị trí góc để dễ debug và xử lý
                     val isAtTop =    instance.params.y <= margin
@@ -486,7 +489,7 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
         val (_, screenHeight) = getScreenSize(this@FloatingSpriteService)
         val spriteHeight = instance.view.height
         val groundY = screenHeight - spriteHeight
-instance.stateUpdater.invoke(2)
+        instance.stateUpdater.invoke(SpriteState1.FALL)
         // Chỉ rơi nếu chưa chạm đất
         while (instance.params.y < groundY) {
             // Nếu người dùng kéo lại → dừng ngay
@@ -499,6 +502,7 @@ instance.stateUpdater.invoke(2)
 
         // Đảm bảo chạm đất chính xác
         instance.params.y = groundY
+        instance.stateUpdater.invoke(SpriteState1.Bottom)
         windowManager.updateViewLayout(instance.view, instance.params)
     }
 
