@@ -20,6 +20,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.LifecycleService
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.savedstate.SavedStateRegistry
@@ -32,9 +33,16 @@ import com.example.demoshemij.domain.SpriteManager
 import com.example.demoshemij.domain.SpriteSheet
 import com.example.demoshemij.domain.SpriteState
 import com.example.demoshemij.domain.rememberSpriteState
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
+import kotlin.coroutines.resume
 import kotlin.math.abs
 import kotlin.math.min
 import kotlin.random.Random
@@ -47,14 +55,13 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
     private data class SpriteInstance(
         val view: ComposeView,
         val params: WindowManager.LayoutParams,
+        val controller: SpriteController,          // <-- mới
         var isDragging: Boolean = false,
         var initialTouchX: Float = 0f,
         var initialTouchY: Float = 0f,
         var initialX: Int = 0,
         var initialY: Int = 0,
-        var moveJob: Job? = null,
-        val flipUpdater: (SpriteFlip?) -> Unit,
-        val stateUpdater: (SpriteState1) -> Unit
+        var moveJob: Job? = null
     )
 
 
@@ -118,19 +125,18 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
 //    }
 
     private fun addNewSprite() {
+        val controller = SpriteController()               // <-- riêng cho sprite này
+
         val newView = ComposeView(this).apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setViewTreeLifecycleOwner(this@FloatingSpriteService)
             setViewTreeSavedStateRegistryOwner(this@FloatingSpriteService)
 
             setContent {
-                setContent {
-                    SpriteContent(
+                val spriteState by controller.state.collectAsStateWithLifecycle()
+                val spriteFlip  by controller.flip.collectAsStateWithLifecycle()
 
-                        onFlipUpdate = { },
-                        onStateUpdate = {  }
-                    )
-                }
+                SpriteContent(spriteState, spriteFlip)
             }
         }
 
@@ -139,8 +145,7 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
             WindowManager.LayoutParams.WRAP_CONTENT,
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-            else
-                WindowManager.LayoutParams.TYPE_PHONE,
+            else WindowManager.LayoutParams.TYPE_PHONE,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                     WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
                     WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
@@ -154,20 +159,11 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
         val instance = SpriteInstance(
             view = newView,
             params = params,
-            flipUpdater = { flip ->
-                SpriteController.flipState.value = flip
-            },
-            stateUpdater = { state ->
-                SpriteController.spriteState.value = state
-            }
+            controller = controller
         )
 
         startSpriteAnimation(instance)
-
-        newView.setOnTouchListener { _, event ->
-            handleTouch(instance, event)
-        }
-
+        newView.setOnTouchListener { _, event -> handleTouch(instance, event) }
         spriteList.add(instance)
     }
 
@@ -188,7 +184,7 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                     val (screenWidth, screenHeight) = getScreenSize(this)
                     val spriteWidth = instance.view.width
                     val spriteHeight = instance.view.height
-instance.stateUpdater.invoke(SpriteState1.Touch)
+                    instance.controller.setState(SpriteState1.Touch)
 // Tính toán vị trí mới
                     var newX = (instance.initialX + (event.rawX - instance.initialTouchX)).toInt()
                     var newY = (instance.initialY + (event.rawY - instance.initialTouchY)).toInt()
@@ -221,47 +217,13 @@ instance.stateUpdater.invoke(SpriteState1.Touch)
 
     @Composable
     fun SpriteContent(
-        onFlipUpdate: (SpriteFlip?) -> Unit,
-        onStateUpdate: (SpriteState1) -> Unit
+        spriteState: SpriteState1,
+        spriteFlip: SpriteFlip?
     ) {
-        val spriteState = rememberSpriteState(
-            totalFrames = 9,
-            framesPerRow = 3,
-            animationSpeed = 100
-        )
-
-        val spriteSpec = SpriteSpec(
-            screenWidth = 360f,
-            default = SpriteSheet(
-                frameWidth = 253,
-                frameHeight = 303,
-                imageRes = R.drawable.sprite_normal
-            )
-        )
-
-        SpriteManager.setSpriteState(spriteState)
-
-        LaunchedEffect(Unit) {
-            spriteState.start()
-            SpriteManager.stopSignal.collect { shouldStop ->
-                if (shouldStop) spriteState.stop()
-            }
-        }
-
-//        LaunchedEffect(spriteFlip.value, selectedRow.value) {
-//            onFlipUpdate(spriteFlip.value)
-//            onStateUpdate(selectedRow.value)
-//        }
-
-//        MovingSprite(
-//            spriteState = spriteState,
-//            spriteSpec = spriteSpec,
-//            spriteFlip = spriteFlip.value,
-//            selectedRow = selectedRow.value
-//        )
         ShimejiSprite(
+            spriteState = spriteState,
+            spriteFlip = spriteFlip
         )
-
     }
 
     private fun startSpriteAnimation(instance: SpriteInstance) {
@@ -313,7 +275,7 @@ instance.stateUpdater.invoke(SpriteState1.Touch)
 
             // Gọi updater của sprite này
 //            val flipUpdater = instance.view.getTag(R.id.sprite_flip_updater) as? (SpriteFlip?) -> Unit
-            instance.flipUpdater.invoke(flip)
+//            instance.controller.setState.invoke(flip)
 
             delay(delayPerStep.toLong())
         }
@@ -331,7 +293,7 @@ instance.stateUpdater.invoke(SpriteState1.Touch)
                 val spriteHeight =    instance.view.height
                 val margin = 0
                 var isMovingRight = true // Theo dõi hướng di chuyển ngang
-                instance.stateUpdater.invoke(SpriteState1.Idle)
+                instance.controller.setState(SpriteState1.Idle)
                 while (!   instance.isDragging) {
                     // Thêm biến kiểm tra vị trí góc để dễ debug và xử lý
                     val isAtTop =    instance.params.y <= margin
@@ -481,26 +443,61 @@ instance.stateUpdater.invoke(SpriteState1.Touch)
         }
     }
     // 👉 Hàm rơi xuống (gravity effect)
-    private suspend fun fallDown(instance: SpriteInstance) {
+    private suspend fun fallDown(instance: SpriteInstance) = withContext(Dispatchers.Main) {
+        // 1. Đợi view đo xong
+        val spriteHeight = awaitViewMeasured(instance.view)
         val (_, screenHeight) = getScreenSize(this@FloatingSpriteService)
-        val spriteHeight = instance.view.height
         val groundY = screenHeight - spriteHeight
-        instance.stateUpdater.invoke(SpriteState1.FALL)
-        // Chỉ rơi nếu chưa chạm đất
-        while (instance.params.y < groundY) {
-            // Nếu người dùng kéo lại → dừng ngay
-            if (instance.isDragging) return
 
-            instance.params.y += 20
+        instance.controller.setState(SpriteState1.FALL)
+
+        val fallSpeed = 15f   // dp per frame (tùy chỉnh)
+        val frameTime = 16L   // ~60 FPS
+
+        while (instance.params.y < groundY) {
+            if (instance.isDragging) {
+                instance.controller.setState(SpriteState1.Idle)
+                return@withContext
+            }
+
+            // Tăng dần vị trí
+            instance.params.y = (instance.params.y + fallSpeed).toInt()
+            if (instance.params.y > groundY) {
+                instance.params.y = groundY
+            }
+
             windowManager.updateViewLayout(instance.view, instance.params)
-            delay(10)
+            delay(frameTime)
         }
 
         // Đảm bảo chạm đất chính xác
         instance.params.y = groundY
         windowManager.updateViewLayout(instance.view, instance.params)
-        instance.stateUpdater.invoke(SpriteState1.Bottom)
-    }
+
+        instance.controller.setState(SpriteState1.Bottom)
+
+
+        private suspend fun awaitViewMeasured(view: View): Int = suspendCancellableCoroutine { cont ->
+            if (view.height > 0) {
+                cont.resume(view.height)
+                return@suspendCancellableCoroutine
+            }
+
+            val listener = object : ViewTreeObserver.OnGlobalLayoutListener {
+                override fun onGlobalLayout() {
+                    if (view.height > 0) {
+                        view.viewTreeObserver.removeOnGlobalLayoutListener(this)
+                        cont.resume(view.height)
+                    }
+                }
+            }
+
+            view.viewTreeObserver.addOnGlobalLayoutListener(listener)
+
+            cont.invokeOnCancellation {
+                view.viewTreeObserver.removeOnGlobalLayoutListener(listener)
+            }
+        }
 
 
     @Suppress("DEPRECATION")
@@ -519,4 +516,19 @@ instance.stateUpdater.invoke(SpriteState1.Touch)
         }
     }
 
+}
+class SpriteController {
+    private val _state = MutableStateFlow(SpriteState1.Idle)
+    val state: StateFlow<SpriteState1> = _state.asStateFlow()
+
+    private val _flip = MutableStateFlow<SpriteFlip?>(null)
+    val flip: StateFlow<SpriteFlip?> = _flip.asStateFlow()
+
+    fun setState(newState: SpriteState1) {
+        _state.value = newState
+    }
+
+    fun setFlip(flip: SpriteFlip?) {
+        _flip.value = flip
+    }
 }

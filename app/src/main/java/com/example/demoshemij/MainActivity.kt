@@ -51,7 +51,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.demoshemij.SpriteController.spriteState
 import com.example.demoshemij.ui.theme.DemoShemijTheme
 import com.stevdza_san.sprite.component.SpriteView
 import com.example.demoshemij.domain.SpriteSheet
@@ -187,15 +186,14 @@ fun MovingSprite(
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ShimejiSprite(
-
+    spriteState: SpriteState1,
+    spriteFlip: SpriteFlip?
 ) {
-    val spriteState by SpriteController.spriteState.collectAsState()
-    val spriteFlip by SpriteController.flipState.collectAsState()
     var currentFrame by remember { mutableStateOf(0) }
 
     val idleImages = remember { listOf(R.drawable.idle_1, R.drawable.idle_2) }
     val touchImages = remember { listOf(R.drawable.hover_1, R.drawable.hover_2, R.drawable.hover_3) }
-    val fallImages = remember { listOf(R.drawable.falling_1, R.drawable.faling_2) } // ✅ fix tên
+    val fallImages = remember { listOf(R.drawable.falling_1, R.drawable.faling_2) }
     val bottomImages = remember { listOf(R.drawable.impact_2, R.drawable.impact_3, R.drawable.impact_4) }
 
     val idleDelay = 300L
@@ -203,8 +201,7 @@ fun ShimejiSprite(
     val bottomDelay = 500L
     val fallDelay = 250L
 
-    // 👇 Đảm bảo mỗi state tạo 1 coroutine mới, coroutine cũ bị hủy
-    LaunchedEffect(key1 = spriteState) {
+    LaunchedEffect(spriteState) {
         currentFrame = 0
         val (images, defaultDelay) = when (spriteState) {
             SpriteState1.Idle -> idleImages to idleDelay
@@ -214,11 +211,10 @@ fun ShimejiSprite(
         }
 
         while (true) {
-            // ⏱️ Chọn delay theo frame
             val frameDelay = when (spriteState) {
                 SpriteState1.Bottom -> when (currentFrame) {
-                    0 -> 500L // impact_2 → impact_3
-                    1 -> 250L // impact_3 → impact_4
+                    0 -> 500L
+                    1 -> 250L
                     else -> defaultDelay
                 }
                 else -> defaultDelay
@@ -229,8 +225,6 @@ fun ShimejiSprite(
         }
     }
 
-
-    // 👇 An toàn hơn, dùng when tương ứng với từng state
     val imageRes = when (spriteState) {
         SpriteState1.Idle -> idleImages.getOrNull(currentFrame) ?: idleImages.first()
         SpriteState1.Touch -> touchImages.getOrNull(currentFrame) ?: touchImages.first()
@@ -244,7 +238,7 @@ fun ShimejiSprite(
         modifier = Modifier
             .size(100.dp)
             .graphicsLayer {
-//                scaleX = if (spriteFlip == SpriteFlip.Horizontal) -1f else 1f
+                scaleX = if (spriteFlip == SpriteFlip.Horizontal) -1f else 1f
             }
     )
 }
@@ -259,10 +253,10 @@ enum class SpriteState1 {
 enum class SpriteFlip1 {
     Horizontal, Vertical
 }
-object SpriteController {
-    val flipState = MutableStateFlow<SpriteFlip?>(null)
-    val spriteState = MutableStateFlow(SpriteState1.Idle)
-}
-
+//object SpriteController {
+//    val flipState = MutableStateFlow<SpriteFlip?>(null)
+//    val spriteState = MutableStateFlow(SpriteState1.Idle)
+//}
+//
 
 
