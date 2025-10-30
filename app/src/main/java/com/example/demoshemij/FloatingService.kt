@@ -52,7 +52,6 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
         var initialTouchY: Float = 0f,
         var initialX: Int = 0,
         var initialY: Int = 0,
-
         var moveJob: Job? = null,
         val flipUpdater: (SpriteFlip?) -> Unit,
         val stateUpdater: (SpriteState1) -> Unit
@@ -119,9 +118,6 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
 //    }
 
     private fun addNewSprite() {
-        val flipState = mutableStateOf<SpriteFlip?>(null)
-        val spriteState = mutableStateOf<SpriteState1?>(null)
-
         val newView = ComposeView(this).apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setViewTreeLifecycleOwner(this@FloatingSpriteService)
@@ -214,7 +210,7 @@ instance.stateUpdater.invoke(SpriteState1.Touch)
                 instance.isDragging = false
                 lifecycleScope.launch {
                     fallDown(instance)
-                        delay(750L)
+                    delay(750L)// Truyền instance
                     startSpriteAnimation(instance)
                 }
                 return true
@@ -502,8 +498,8 @@ instance.stateUpdater.invoke(SpriteState1.Touch)
 
         // Đảm bảo chạm đất chính xác
         instance.params.y = groundY
-        instance.stateUpdater.invoke(SpriteState1.Bottom)
         windowManager.updateViewLayout(instance.view, instance.params)
+        instance.stateUpdater.invoke(SpriteState1.Bottom)
     }
 
 

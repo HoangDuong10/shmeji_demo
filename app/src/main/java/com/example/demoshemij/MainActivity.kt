@@ -51,6 +51,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.demoshemij.SpriteController.spriteState
 import com.example.demoshemij.ui.theme.DemoShemijTheme
 import com.stevdza_san.sprite.component.SpriteView
 import com.example.demoshemij.domain.SpriteSheet
@@ -185,10 +186,11 @@ fun MovingSprite(
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun ShimejiSprite() {
+fun ShimejiSprite(
+
+) {
     val spriteState by SpriteController.spriteState.collectAsState()
     val spriteFlip by SpriteController.flipState.collectAsState()
-
     var currentFrame by remember { mutableStateOf(0) }
 
     val idleImages = remember { listOf(R.drawable.idle_1, R.drawable.idle_2) }
