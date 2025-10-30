@@ -215,7 +215,7 @@ fun ShimejiSprite(
             SpriteState1.FALL -> animateFrames(fallImages, fallDelay) { currentFrame = it }
             SpriteState1.CLIMB -> animateFrames(climbImages, dashLoopDelay) { currentFrame = it }
             SpriteState1.DASH -> animateDash(dashImages, dashStartDelay, dashLoopDelay) { currentFrame = it }
-            SpriteState1.CUSTOM -> animateFrames(walkingImages, fallDelay) { currentFrame = it }
+            SpriteState1.CUSTOM -> animateFrames(customImage, fallDelay) { currentFrame = it }
             SpriteState1.WALKING -> animateFrames(walkingImages, fallDelay) { currentFrame = it }
         }
     }
@@ -227,7 +227,7 @@ fun ShimejiSprite(
         SpriteState1.FALL -> fallImages.getOrNull(currentFrame) ?: fallImages.first()
         SpriteState1.DASH -> dashImages.getOrNull(currentFrame) ?: dashImages.first()
         SpriteState1.CLIMB -> climbImages.getOrNull(currentFrame) ?: dashImages.first()
-        SpriteState1.CUSTOM -> dashImages.getOrNull(currentFrame) ?: dashImages.first()
+        SpriteState1.CUSTOM -> customImage.getOrNull(currentFrame) ?: dashImages.first()
         SpriteState1.WALKING -> walkingImages.getOrNull(currentFrame) ?: dashImages.first()
     }
 
@@ -249,8 +249,8 @@ fun ShimejiSprite(
                                 spriteState == SpriteState1.Bottom ||
                                 spriteState == SpriteState1.DASH
                             -> 0.dp
-                        spriteFlip == SpriteFlip1.LEFT -> (-32).dp
-                        spriteFlip == SpriteFlip1.RIGHT -> (32).dp
+                        spriteFlip == SpriteFlip1.LEFT && spriteState!= SpriteState1.WALKING -> (-32).dp
+                        spriteFlip == SpriteFlip1.RIGHT && spriteState!= SpriteState1.WALKING -> (32).dp
                         else -> 0.dp
                     },
                     y = when (spriteFlip) {
