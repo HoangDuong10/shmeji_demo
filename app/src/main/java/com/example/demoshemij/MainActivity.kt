@@ -41,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
@@ -183,11 +184,10 @@ fun MovingSprite(
 
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ShimejiSprite(
     spriteState: SpriteState1,
-    spriteFlip: SpriteFlip?
+    spriteFlip: SpriteFlip1?
 ) {
     var currentFrame by remember { mutableStateOf(0) }
 
@@ -195,33 +195,28 @@ fun ShimejiSprite(
     val touchImages = remember { listOf(R.drawable.hover_1, R.drawable.hover_2, R.drawable.hover_3) }
     val fallImages = remember { listOf(R.drawable.falling_1, R.drawable.faling_2) }
     val bottomImages = remember { listOf(R.drawable.impact_2, R.drawable.impact_3, R.drawable.impact_4) }
-
+    val dashImages = remember { listOf(R.drawable.dash_1, R.drawable.dash_2, R.drawable.dash_3) }
+    val climbImages = remember { listOf(R.drawable.climb_1, R.drawable.climb_2, R.drawable.climb_3) }
+    val customImage = remember { listOf(R.drawable.custom_1, R.drawable.custom_2, R.drawable.custom_3, R.drawable.custom_4, R.drawable.custom_5, R.drawable.custom_6, R.drawable.custom_7) }
+    val walkingImages = remember { listOf(R.drawable.walking_1, R.drawable.walking_2) }
     val idleDelay = 300L
     val touchDelay = 250L
     val bottomDelay = 500L
     val fallDelay = 250L
+    val dashStartDelay = 160L
+    val dashLoopDelay = 333L
 
     LaunchedEffect(spriteState) {
         currentFrame = 0
-        val (images, defaultDelay) = when (spriteState) {
-            SpriteState1.Idle -> idleImages to idleDelay
-            SpriteState1.Touch -> touchImages to touchDelay
-            SpriteState1.Bottom -> bottomImages to bottomDelay
-            SpriteState1.FALL -> fallImages to fallDelay
-        }
-
-        while (true) {
-            val frameDelay = when (spriteState) {
-                SpriteState1.Bottom -> when (currentFrame) {
-                    0 -> 500L
-                    1 -> 250L
-                    else -> defaultDelay
-                }
-                else -> defaultDelay
-            }
-
-            delay(frameDelay)
-            currentFrame = (currentFrame + 1) % images.size
+        when (spriteState) {
+            SpriteState1.Idle -> animateFrames(idleImages, idleDelay) { currentFrame = it }
+            SpriteState1.Touch -> animateFrames(touchImages, touchDelay) { currentFrame = it }
+            SpriteState1.Bottom -> animateFrames(bottomImages, bottomDelay) { currentFrame = it }
+            SpriteState1.FALL -> animateFrames(fallImages, fallDelay) { currentFrame = it }
+            SpriteState1.CLIMB -> animateFrames(climbImages, dashLoopDelay) { currentFrame = it }
+            SpriteState1.DASH -> animateDash(dashImages, dashStartDelay, dashLoopDelay) { currentFrame = it }
+            SpriteState1.CUSTOM -> animateFrames(walkingImages, fallDelay) { currentFrame = it }
+            SpriteState1.WALKING -> animateFrames(walkingImages, fallDelay) { currentFrame = it }
         }
     }
 
@@ -230,28 +225,103 @@ fun ShimejiSprite(
         SpriteState1.Touch -> touchImages.getOrNull(currentFrame) ?: touchImages.first()
         SpriteState1.Bottom -> bottomImages.getOrNull(currentFrame) ?: bottomImages.first()
         SpriteState1.FALL -> fallImages.getOrNull(currentFrame) ?: fallImages.first()
+        SpriteState1.DASH -> dashImages.getOrNull(currentFrame) ?: dashImages.first()
+        SpriteState1.CLIMB -> climbImages.getOrNull(currentFrame) ?: dashImages.first()
+        SpriteState1.CUSTOM -> dashImages.getOrNull(currentFrame) ?: dashImages.first()
+        SpriteState1.WALKING -> walkingImages.getOrNull(currentFrame) ?: dashImages.first()
     }
 
-    Image(
-        painter = painterResource(id = imageRes),
-        contentDescription = null,
-        modifier = Modifier
-            .size(100.dp)
-            .graphicsLayer {
-                scaleX = if (spriteFlip == SpriteFlip.Horizontal) -1f else 1f
-            }
-    )
+    Box(
+        modifier = Modifier.graphicsLayer {
+            clip = false // 👈 Cho phép phần tử con vẽ tràn ra ngoài
+        }
+    ) {
+        Image(
+            painter = painterResource(id = imageRes),
+            contentDescription = null,
+            modifier = Modifier
+                .size(100.dp)
+                .offset(
+                    x = when {
+                        spriteFlip == SpriteFlip1.TOP ||
+                                spriteState == SpriteState1.Touch ||
+                                spriteState == SpriteState1.FALL ||
+                                spriteState == SpriteState1.Bottom ||
+                                spriteState == SpriteState1.DASH
+                            -> 0.dp
+                        spriteFlip == SpriteFlip1.LEFT -> (-32).dp
+                        spriteFlip == SpriteFlip1.RIGHT -> (32).dp
+                        else -> 0.dp
+                    },
+                    y = when (spriteFlip) {
+                        SpriteFlip1.TOP -> (-32).dp
+                        else -> 0.dp
+                    },
+                )
+                .graphicsLayer {
+                    when (spriteFlip) {
+                        SpriteFlip1.LEFT -> {
+                            scaleX = 1f
+                            rotationZ = 0f
+                        }
+                        SpriteFlip1.RIGHT -> {
+                            scaleX = -1f
+                            rotationZ = 0f
+                        }
+                        SpriteFlip1.TOP -> {
+                            scaleX = 1f
+                            rotationZ = 90f
+                        }
+                        else -> {
+                            scaleX = 1f
+                            rotationZ = 0f
+                        }
+                    }
+                }
+        )
+    }
+
+
+}
+
+private suspend fun animateFrames(images: List<Int>, frameDelay: Long, setFrame: (Int) -> Unit = {}) {
+    var current = 0
+    while (true) {
+        delay(frameDelay)
+        current = (current + 1) % images.size
+        setFrame(current)
+    }
+}
+
+private suspend fun animateDash(
+    images: List<Int>,
+    dashStartDelay: Long,
+    dashLoopDelay: Long,
+    setFrame: (Int) -> Unit
+) {
+    // Bước 1: dash_1 → dash_2 (chạy 1 lần)
+    setFrame(0)
+    delay(dashStartDelay)
+    setFrame(1)
+
+    // Bước 2: lặp 2 ↔ 3 vô hạn
+    var current = 1
+    while (true) {
+        delay(dashLoopDelay)
+        current = if (current == 1) 2 else 1
+        setFrame(current)
+    }
 }
 
 
 // 🧩 Enum mô tả trạng thái Shimeji
 enum class SpriteState1 {
-    Idle, Touch, Bottom,FALL
+    Idle, Touch, Bottom,FALL,DASH,CLIMB,CUSTOM,WALKING
 }
 
 // 🧭 Enum mô tả hướng lật
 enum class SpriteFlip1 {
-    Horizontal, Vertical
+    LEFT, TOP,RIGHT,BOTTOM
 }
 //object SpriteController {
 //    val flipState = MutableStateFlow<SpriteFlip?>(null)
