@@ -5,6 +5,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -20,11 +21,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -43,12 +46,14 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -193,7 +198,7 @@ fun ShimejiSprite(
 
     val idleImages = remember { listOf(R.drawable.idle_1, R.drawable.idle_2) }
     val touchImages = remember { listOf(R.drawable.hover_1, R.drawable.hover_2, R.drawable.hover_3) }
-    val fallImages = remember { listOf(R.drawable.falling_1, R.drawable.faling_2) }
+    val fallImages = remember { listOf(R.drawable.falling_1, R.drawable.falling_2) }
     val bottomImages = remember { listOf(R.drawable.impact_2, R.drawable.impact_3, R.drawable.impact_4) }
     val dashImages = remember { listOf(R.drawable.dash_1, R.drawable.dash_2, R.drawable.dash_3) }
     val climbImages = remember { listOf(R.drawable.climb_1, R.drawable.climb_2, R.drawable.climb_3) }
@@ -215,7 +220,7 @@ fun ShimejiSprite(
             SpriteState1.FALL -> animateFrames(fallImages, fallDelay) { currentFrame = it }
             SpriteState1.CLIMB -> animateFrames(climbImages, dashLoopDelay) { currentFrame = it }
             SpriteState1.DASH -> animateDash(dashImages, dashStartDelay, dashLoopDelay) { currentFrame = it }
-            SpriteState1.CUSTOM -> animateFrames(customImage, fallDelay) { currentFrame = it }
+            SpriteState1.CUSTOM -> animateCustom(customImage) { currentFrame = it }
             SpriteState1.WALKING -> animateFrames(walkingImages, fallDelay) { currentFrame = it }
         }
     }
@@ -226,35 +231,44 @@ fun ShimejiSprite(
         SpriteState1.Bottom -> bottomImages.getOrNull(currentFrame) ?: bottomImages.first()
         SpriteState1.FALL -> fallImages.getOrNull(currentFrame) ?: fallImages.first()
         SpriteState1.DASH -> dashImages.getOrNull(currentFrame) ?: dashImages.first()
-        SpriteState1.CLIMB -> climbImages.getOrNull(currentFrame) ?: dashImages.first()
-        SpriteState1.CUSTOM -> customImage.getOrNull(currentFrame) ?: dashImages.first()
-        SpriteState1.WALKING -> walkingImages.getOrNull(currentFrame) ?: dashImages.first()
+        SpriteState1.CLIMB -> climbImages.getOrNull(currentFrame) ?: climbImages.first()
+        SpriteState1.CUSTOM -> customImage.getOrNull(currentFrame) ?: customImage.first()
+        SpriteState1.WALKING -> walkingImages.getOrNull(currentFrame) ?: walkingImages.first()
     }
+    val imageBitmap = ImageBitmap.imageResource(id = walkingImages[0])
+    val imageBitmap11 = ImageBitmap.imageResource(id =imageRes).width.toFloat()
+    val aspectRatio = imageBitmap.width.toFloat()/10
+//    Log.d("ShimejiSprite", "Aspect Ratio: $aspectRatio")
+    Log.d("ShimejiSprite", "Aspect Ratio111: ${imageBitmap11 / 10}")
 
+    // 🧩 Thu nhỏ 20% so với kích thước gốc
+    val scaleFactor = 0.2f
+    val widthDp = with(LocalDensity.current) { (imageBitmap.width * scaleFactor).toDp() }
     Box(
-        modifier = Modifier.graphicsLayer {
+        modifier = Modifier.size(160.dp).graphicsLayer {
             clip = false // 👈 Cho phép phần tử con vẽ tràn ra ngoài
-        }
+        },
+                contentAlignment = Alignment.TopEnd
     ) {
         Image(
             painter = painterResource(id = imageRes),
             contentDescription = null,
             modifier = Modifier
-                .size(100.dp)
                 .offset(
                     x = when {
                         spriteFlip == SpriteFlip1.TOP ||
                                 spriteState == SpriteState1.Touch ||
                                 spriteState == SpriteState1.FALL ||
                                 spriteState == SpriteState1.Bottom ||
-                                spriteState == SpriteState1.DASH
+                                spriteState == SpriteState1.DASH ||
+                                spriteState == SpriteState1.CUSTOM
                             -> 0.dp
-                        spriteFlip == SpriteFlip1.LEFT && spriteState!= SpriteState1.WALKING -> (-32).dp
-                        spriteFlip == SpriteFlip1.RIGHT && spriteState!= SpriteState1.WALKING -> (32).dp
+                        spriteFlip == SpriteFlip1.LEFT && spriteState!= SpriteState1.WALKING -> (-33).dp
+                        spriteFlip == SpriteFlip1.RIGHT && spriteState!= SpriteState1.WALKING -> (33).dp
                         else -> 0.dp
                     },
                     y = when (spriteFlip) {
-                        SpriteFlip1.TOP -> (-32).dp
+                        SpriteFlip1.TOP -> (-33).dp
                         else -> 0.dp
                     },
                 )
@@ -278,6 +292,10 @@ fun ShimejiSprite(
                         }
                     }
                 }
+//                .background(Color.Red)
+                ,
+            contentScale = ContentScale.FillBounds
+
         )
     }
 
@@ -312,6 +330,23 @@ private suspend fun animateDash(
         setFrame(current)
     }
 }
+
+private suspend fun animateCustom(
+    images: List<Int>,
+    setFrame: (Int) -> Unit
+) {
+    val sequence = listOf(0, 1, 2, 3, 2, 3, 4, 5, 6, 5, 6, 5, 6, 5, 6)
+
+    for (i in sequence.indices) {
+        setFrame(sequence[i])
+
+        // Nếu là frame 5 -> 6 (index 6 -> 7) thì delay 1/12s, còn lại 1/6s
+        val delayTime = if (i == 6) 83L else 166L
+
+        delay(delayTime)
+    }
+}
+
 
 
 // 🧩 Enum mô tả trạng thái Shimeji
