@@ -68,6 +68,7 @@ import com.example.demoshemij.domain.SpriteManager
 import com.example.demoshemij.domain.SpriteState
 import com.example.demoshemij.domain.rememberSpriteState
 import com.stevdza_san.sprite.util.getScreenWidth
+import kotlinx.coroutines.NonCancellable.isActive
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -194,7 +195,8 @@ fun MovingSprite(
 @Composable
 fun ShimejiSprite(
     spriteState: SpriteState1,
-    spriteFlip: SpriteFlip1?
+    spriteFlip: SpriteFlip1?,
+    onCustomAnimationFinished: () -> Unit
 ) {
     var currentFrame by remember { mutableStateOf(0) }
 
@@ -222,7 +224,7 @@ fun ShimejiSprite(
             SpriteState1.FALL -> animateFrames(fallImages, fallDelay) { currentFrame = it }
             SpriteState1.CLIMB -> animateFrames(climbImages, dashLoopDelay) { currentFrame = it }
             SpriteState1.DASH -> animateDash(dashImages, dashStartDelay, dashLoopDelay) { currentFrame = it }
-            SpriteState1.CUSTOM -> animateCustom(customImage) { currentFrame = it }
+            SpriteState1.CUSTOM -> animateCustom(images = customImage, setFrame = {currentFrame = it}, onFinished = {onCustomAnimationFinished()})
             SpriteState1.WALKING -> animateFrames(walkingImages, fallDelay) { currentFrame = it }
         }
     }
@@ -319,6 +321,7 @@ fun ShimejiSprite(
 private suspend fun animateFrames(images: List<Int>, frameDelay: Long, setFrame: (Int) -> Unit = {}) {
     var current = 0
     while (true) {
+        if (!isActive) return
         delay(frameDelay)
         current = (current + 1) % images.size
         setFrame(current)
@@ -339,6 +342,7 @@ private suspend fun animateDash(
     // Bước 2: lặp 2 ↔ 3 vô hạn
     var current = 1
     while (true) {
+        if (!isActive) return
         delay(dashLoopDelay)
         current = if (current == 1) 2 else 1
         setFrame(current)
@@ -347,11 +351,13 @@ private suspend fun animateDash(
 
 private suspend fun animateCustom(
     images: List<Int>,
-    setFrame: (Int) -> Unit
+    setFrame: (Int) -> Unit,
+    onFinished: () -> Unit
 ) {
     val sequence = listOf(0, 1, 2, 3, 2, 3, 4, 5, 6, 5, 6, 5, 6, 5, 6)
 
     for (i in sequence.indices) {
+        if (!isActive) return
         setFrame(sequence[i])
 
         // Nếu là frame 5 -> 6 (index 6 -> 7) thì delay 1/12s, còn lại 1/6s
@@ -359,6 +365,7 @@ private suspend fun animateCustom(
 
         delay(delayTime)
     }
+    onFinished()
 }
 
 
