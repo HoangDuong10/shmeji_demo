@@ -194,11 +194,12 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
             }
 
             MotionEvent.ACTION_MOVE -> {
-                if (instance.isDragging) {
+                val duration = System.currentTimeMillis() - touchDownTime
+                if (instance.isDragging &&  duration < 1000) {
                     val (screenWidth, screenHeight) = getScreenSize(this)
                     val spriteWidth = instance.view.width
                     val spriteHeight = instance.view.height
-//                    instance.controller.setState(SpriteState1.Touch)
+                    instance.controller.setState(SpriteState1.Touch)
 
                     var newX = (instance.initialX + (event.rawX - instance.initialTouchX)).toInt()
                     var newY = (instance.initialY + (event.rawY - instance.initialTouchY)).toInt()
@@ -212,23 +213,26 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
             }
 
             MotionEvent.ACTION_UP -> {
-                val duration = System.currentTimeMillis() - touchDownTime
+                lifecycleScope.launch {
+                    val duration = System.currentTimeMillis() - touchDownTime
 
-                Log.d("SpriteTouch", "Touch duration: $duration ${instance.controller.getState() == SpriteState1.WALKING}")
-                instance.isDragging = false
+                    Log.d("SpriteTouch", "Touch duration: $duration ${instance.controller.getState() == SpriteState1.WALKING}")
+                    instance.isDragging = false
 
-                when {
-                    duration < 1500 && instance.controller.getState() == SpriteState1.WALKING -> {
-                        // 🩵 Sự kiện click
-                        Log.d("SpriteTouch", "Click detected!")
-                        instance.controller.setState(SpriteState1.CUSTOM)
-                    }
-                    else -> {
-                        // Bình thường — thả sau kéo
-                        lifecycleScope.launch {
+                    when {
+                        duration < 1000 && instance.controller.getState() == SpriteState1.WALKING -> {
+                            // 🩵 Sự kiện click
+                            Log.d("SpriteTouch", "Click detected!")
+                            instance.controller.setState(SpriteState1.CUSTOM)
+                        delay(3000L)
+                            animateSpriteWindow(instance)
+                        }
+                        else -> {
+                            // Bình thường — thả sau kéo
                             fallDown(instance)
 //                            delay(750L)
 //                            startSpriteAnimation(instance)
+
                         }
                     }
                 }
@@ -706,7 +710,8 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
             val insets = windowMetrics.windowInsets.getInsetsIgnoringVisibility(
                 WindowInsets.Type.navigationBars() or WindowInsets.Type.displayCutout()
             )
-            val width = windowMetrics.bounds.width() - insets.left - insets.right
+//            val width = windowMetrics.bounds.width() - insets.left - insets.right
+            val width = windowMetrics.bounds.width()
 //            val height = windowMetrics.bounds.height() - insets.top - insets.bottom
             val height = windowMetrics.bounds.height()- insets.bottom
             width to height

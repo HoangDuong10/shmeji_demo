@@ -11,7 +11,9 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -240,6 +242,18 @@ fun ShimejiSprite(
     val aspectRatio = imageBitmap.width.toFloat()/10
 //    Log.d("ShimejiSprite", "Aspect Ratio: $aspectRatio")
     Log.d("ShimejiSprite", "Aspect Ratio111: ${imageBitmap11 / 10}")
+    val animatedScaleX by animateFloatAsState(
+        targetValue = when (spriteFlip) {
+            SpriteFlip1.LEFT -> 1f
+            SpriteFlip1.RIGHT -> -1f
+            else -> 1f
+        },
+        animationSpec = tween(
+            durationMillis = 300,
+            easing = LinearOutSlowInEasing
+        ),
+        label = "flipAnimation"
+    )
 
     // 🧩 Thu nhỏ 20% so với kích thước gốc
     val scaleFactor = 0.2f
