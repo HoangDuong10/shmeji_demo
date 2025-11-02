@@ -413,8 +413,8 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                                 val targetY = margin
                                 animateParamTo(instance, "y", targetY, 2000, false)
                             } else {
-                                val targetX = screenWidth - spriteWidth - margin
-                                animateParamTo(instance, "x", targetX, 8000, true)
+                                val targetX = screenWidth/3
+                                animateParamTo(instance, "x", targetX, 3000, true)
                             }
                         }
                         action < 95 -> { // Di chuyển xuống
@@ -426,8 +426,8 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                                 val targetY = screenHeight - spriteHeight - margin
                                 animateParamTo(instance, "y", targetY, 2000, false)
                             } else {
-                                val targetX = screenWidth - spriteWidth - margin
-                                animateParamTo(instance, "x", targetX, 8000, true)
+                                val targetX = screenWidth/3
+                                animateParamTo(instance, "x", targetX, 3000, true)
                             }
                         }
                         else -> { // Nhảy sang phải
@@ -449,8 +449,8 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                                 val targetY = margin
                                 animateParamTo(instance, "y", targetY, 2000, false)
                             } else {
-                                val targetX = 0
-                                animateParamTo(instance, "x", targetX, 8000, false)
+                                val targetX = screenWidth/3
+                                animateParamTo(instance, "x", targetX, 3000, false)
                             }
                         }
                         action < 95 -> { // Di chuyển xuống
@@ -462,8 +462,8 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                                 val targetY = screenHeight - spriteHeight - margin
                                 animateParamTo(instance, "y", targetY, 2000, false)
                             } else {
-                                val targetX = 0
-                                animateParamTo(instance, "x", targetX, 8000, false)
+                                val targetX = screenWidth/3
+                                animateParamTo(instance, "x", targetX, 3000, false)
                             }
                         }
                         else -> { // Nhảy sang trái
@@ -504,7 +504,40 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                             }
                         }
                     }
+                }else -> {
+                Log.d("FloatingSprite", "Sprite in middle")
+                delay(100)
+                when {
+                    action < 60 -> { // Đi sang phải
+                        delay(300)
+                        val maxRightDistance = screenWidth - spriteWidth - margin - instance.params.x
+                        if (maxRightDistance > 180) {
+                            val targetX = instance.params.x + Random.nextInt(180, min(200, maxRightDistance))
+                            animateParamTo(instance, "x", targetX, 4000, true)
+                        } else if (maxRightDistance > 0) {
+                            val targetX = screenWidth - spriteWidth - margin
+                            animateParamTo(instance, "x", targetX, 4000, true)
+                        } else {
+                            val targetY = margin
+                            animateParamTo(instance, "y", targetY, 2000, false)
+                        }
+                    }
+                    else -> { // Đi sang trái
+                        val maxLeftDistance = instance.params.x - margin
+                        if (maxLeftDistance > 180) {
+                            val targetX = instance.params.x - Random.nextInt(180, min(200, maxLeftDistance))
+                            animateParamTo(instance, "x", targetX, 4000, false)
+                        } else if (maxLeftDistance > 0) {
+                            val targetX = margin
+                            animateParamTo(instance, "x", targetX, 4000, false)
+                        } else {
+                            val targetY = margin
+                            animateParamTo(instance, "y", targetY, 2000, true)
+                        }
+                    }
                 }
+            }
+
             }
         }
     }
@@ -559,7 +592,8 @@ Log.d("bbbb","${instance.params.y}")
             } catch (e: Exception) {
                 Log.e("FloatingSprite", "Fall animation error", e)
             }
-        }}
+        }
+    }
     }
 
     private suspend fun awaitViewMeasured(view: View): Int = suspendCancellableCoroutine { cont ->
