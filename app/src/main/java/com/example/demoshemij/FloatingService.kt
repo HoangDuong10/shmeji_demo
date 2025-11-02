@@ -163,7 +163,7 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP or Gravity.START
-            x = (screenWidth + newView.width*2) /2    // 👈 Căn giữa ngang
+            x = (screenWidth + newView.width) /2    // 👈 Căn giữa ngang
             y = 0
         }
 //        newView.systemUiVisibility = (
@@ -390,14 +390,15 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                 val spriteHeight =    instance.view.height
                 val margin = 0
                 var isMovingRight = true // Theo dõi hướng di chuyển ngang
-                while (!   instance.isDragging) {
+                while (!instance.isDragging) {
 
                     // Thêm biến kiểm tra vị trí góc để dễ debug và xử lý
-                    val isAtTop =    instance.params.y <= margin
-                    val isAtBottom =    instance.params.y >= screenHeight - spriteHeight - margin
+                    val isAtTop = instance.params.y <= margin
+                    val isAtBottom = instance.params.y >= screenHeight - spriteHeight - margin
+
                     val isAtLeft =   instance. params.x <= 0
                     val isAtRight =    instance.params.x >= screenWidth - spriteWidth - margin
-                    Log.d("duonghx11111", "aaaa ${instance.params.y} + ${instance.params.x}")
+//                    Log.d("duonghx11111", "aaaa ${instance.params.y} + ${instance.params.x}")
                     // Chọn tỷ lệ dựa trên vị trí (cạnh trái, cạnh phải, hoặc ở giữa)
                     val action = Random.nextInt(100)
 
@@ -418,7 +419,7 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                                     } else {
                                         // Đã ở top (góc trên trái), buộc di chuyển ngang sang phải trên cạnh trên
                                         val targetX = screenWidth - spriteWidth - margin
-                                        animateParamTo(instance, "x", targetX, 2000, true)  // isMovingRight = true, không ! vì đổi từ up sang right
+                                        animateParamTo(instance, "x", targetX, 8000, true)  // isMovingRight = true, không ! vì đổi từ up sang right
                                     }
                                 }
                                 action < 95 -> { // 10-94: 85% - Di chuyển xuống
@@ -433,7 +434,7 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                                     } else {
                                         // Đã ở bottom (góc dưới trái), buộc di chuyển ngang sang phải trên cạnh dưới
                                         val targetX = screenWidth - spriteWidth - margin
-                                        animateParamTo(instance, "x", targetX, 2000, true)  // isMovingRight = true, không ! vì đổi từ down sang right
+                                        animateParamTo(instance, "x", targetX, 8000, true)  // isMovingRight = true, không ! vì đổi từ down sang right
                                     }
                                 }
                                 else -> { // 95-99: 5% - Nhảy sang cạnh phải
@@ -461,7 +462,7 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                                     } else {
                                         // Đã ở top (góc trên phải), buộc di chuyển ngang sang trái trên cạnh trên
                                         val targetX = 0
-                                        animateParamTo(instance, "x", targetX, 2000, false)  // isMovingRight = false, không ! vì đổi từ up sang left
+                                        animateParamTo(instance, "x", targetX, 8000, false)  // isMovingRight = false, không ! vì đổi từ up sang left
                                     }
                                 }
                                 action < 95 -> { // 85-94: 10% - Di chuyển xuống
@@ -476,7 +477,7 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                                     } else {
                                         // Đã ở bottom (góc dưới phải), buộc di chuyển ngang sang trái trên cạnh dưới
                                         val targetX = 0
-                                        animateParamTo(instance, "x", targetX, 2000, false)  // isMovingRight = false, không ! vì đổi từ down sang left
+                                        animateParamTo(instance, "x", targetX, 8000, false)  // isMovingRight = false, không ! vì đổi từ down sang left
                                     }
                                 }
                                 else -> { // 95-99: 5% - Nhảy sang cạnh trái
@@ -487,7 +488,14 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                                 }
                             }
                         }
-                        else -> {
+                        isAtTop -> {
+                            Log.d("duonghx11111", "canh tren ")
+
+
+                        }
+
+                        isAtBottom -> {
+                            Log.d("duonghx11111", "canh duoi ")
                             when {
                                 action < 60 -> { // 0-59: 60% - Đi sang phải
                                     delay(300)
@@ -526,6 +534,8 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                             }
 
                         }
+                        else -> {
+                        }
                     }
                     // Thêm độ trễ nhỏ giữa các hành động để tránh di chuyển quá nhanh
 //                    delay(100)
@@ -533,6 +543,7 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
 
 
     }
+
     // 👉 Hàm rơi xuống (gravity effect)
     private fun fallDown(instance: SpriteInstance, isBoola: Boolean) {
         instance.view.post {
