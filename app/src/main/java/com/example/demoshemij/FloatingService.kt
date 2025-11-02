@@ -11,12 +11,7 @@ import android.util.Log
 import android.view.*
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.LifecycleService
@@ -27,27 +22,12 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import com.example.demoshemij.domain.SpriteSpec
-import com.example.demoshemij.domain.SpriteFlip
-import com.example.demoshemij.domain.SpriteManager
-import com.example.demoshemij.domain.SpriteSheet
-import com.example.demoshemij.domain.SpriteState
-import com.example.demoshemij.domain.rememberSpriteState
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.withContext
+import kotlin.coroutines.coroutineContext
 import kotlin.coroutines.resume
-import kotlin.math.abs
 import kotlin.math.min
 import kotlin.math.sqrt
 import kotlin.random.Random
@@ -55,29 +35,27 @@ import kotlin.random.Random
 class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
 
     private lateinit var windowManager: WindowManager
-    private val scope = CoroutineScope(
-        context = Dispatchers.Main + SupervisorJob()
-    )
 
-    // Danh sách các sprite (view + params)
+    // ✅ Không tạo scope riêng, dùng lifecycleScope có sẵn
+    // private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob()) // ❌ XÓA
+
     private data class SpriteInstance(
         val view: ComposeView,
         val params: WindowManager.LayoutParams,
-        val controller: SpriteController,          // <-- mới
+        val controller: SpriteController,
         var isDragging: Boolean = false,
         var initialTouchX: Float = 0f,
         var initialTouchY: Float = 0f,
         var initialX: Int = 0,
         var initialY: Int = 0,
-        var moveJob: Job? = null
+        var moveJob: Job? = null  // ✅ Job để quản lý animation
     )
-
 
     private val spriteList = mutableListOf<SpriteInstance>()
     private val savedStateRegistryController = SavedStateRegistryController.create(this)
+
     override val savedStateRegistry: SavedStateRegistry
         get() = savedStateRegistryController.savedStateRegistry
-
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate() {
@@ -85,28 +63,35 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
         savedStateRegistryController.performRestore(null)
         startForegroundService()
-        // Không tạo sprite ở đây nữa
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
-        if (intent?.action == "ADD_SPRITE") {
-            addNewSprite()
-        } else if (intent?.action == "STOP_ALL") {
-            stopAllSprites()
+        when (intent?.action) {
+            "ADD_SPRITE" -> addNewSprite()
+            "STOP_ALL" -> stopAllSprites()
         }
         return START_STICKY
     }
+
+    // ✅ Cancel đúng cách tất cả jobs trước khi remove view
     private fun stopAllSprites() {
         spriteList.forEach { instance ->
             instance.moveJob?.cancel()
-            if (instance.view.isAttachedToWindow) {
-                windowManager.removeView(instance.view)
+            instance.moveJob = null
+
+            try {
+                if (instance.view.isAttachedToWindow) {
+                    windowManager.removeView(instance.view)
+                }
+            } catch (e: IllegalArgumentException) {
+                Log.e("FloatingSprite", "View already removed", e)
             }
         }
         spriteList.clear()
         stopSelf()
     }
+
     @RequiresApi(Build.VERSION_CODES.O)
     private fun startForegroundService() {
         val channelId = "floating_sprite_channel"
@@ -127,15 +112,11 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
         startForeground(1, notification)
     }
 
-//    companion object {
-//        var currentFlipUpdater: ((SpriteFlip?) -> Unit)? = null
-//        var currentState:((Int?) -> Unit)? = null
-//    }
-
     private fun addNewSprite() {
         val (screenWidth, screenHeight) = getScreenSize(this@FloatingSpriteService)
         val controller = SpriteController()
-        var instance : SpriteInstance?= null// <-- riêng cho sprite này
+        var instance: SpriteInstance? = null
+
         val newView = ComposeView(this).apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setViewTreeLifecycleOwner(this@FloatingSpriteService)
@@ -143,13 +124,19 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
 
             setContent {
                 val spriteState by controller.state.collectAsStateWithLifecycle()
-                val spriteFlip  by controller.flip.collectAsStateWithLifecycle()
+                val spriteFlip by controller.flip.collectAsStateWithLifecycle()
 
-                SpriteContent(spriteState, spriteFlip,onCustomAnimationFinished = {
-                    instance?.controller?.setState(SpriteState1.WALKING)
-                })
+                SpriteContent(
+                    spriteState = spriteState,
+                    spriteFlip = spriteFlip,
+                    onCustomAnimationFinished = {
+                        instance?.controller?.setState(SpriteState1.WALKING)
+                        an
+                    }
+                )
             }
         }
+
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
@@ -163,14 +150,10 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP or Gravity.START
-            x = (screenWidth + newView.width) /2    // 👈 Căn giữa ngang
+            x = (screenWidth + newView.width) / 2
             y = 0
         }
-//        newView.systemUiVisibility = (
-//                View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-//                        or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-//                        or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-//                )
+
         windowManager.addView(newView, params)
 
         instance = SpriteInstance(
@@ -183,6 +166,7 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
         newView.setOnTouchListener { _, event -> handleTouch(instance, event) }
         spriteList.add(instance)
     }
+
     private var touchDownTime = 0L
 
     private fun handleTouch(instance: SpriteInstance, event: MotionEvent): Boolean {
@@ -190,12 +174,14 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
 
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
-                if(instance.controller.getState() == SpriteState1.CLIMB){
+                if (instance.controller.getState() == SpriteState1.CLIMB) {
                     instance.isDragging = true
                 }
-                Log.d("MotionEvent", "ACTION_DOWN")
-                // ❌ Không set isDragging ở đây
+
+                // ✅ Cancel job an toàn
                 instance.moveJob?.cancel()
+                instance.moveJob = null
+
                 instance.initialX = params.x
                 instance.initialY = params.y
                 instance.initialTouchX = event.rawX
@@ -208,15 +194,10 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                 val dx = event.rawX - instance.initialTouchX
                 val dy = event.rawY - instance.initialTouchY
                 val distance = sqrt(dx * dx + dy * dy)
-                Log.d("MotionEvent", "a1${distance}")
 
-                // ✅ Nếu người dùng di chuyển đủ xa mới xem là kéo
-                if (distance > 1 ||  instance.controller.getState() == SpriteState1.WALKING) { // có thể chỉnh ngưỡng này, ví dụ 5f hoặc 15f
-//                    if (!instance.isDragging) {
-                        Log.d("MotionEvent", "Bắt đầu kéo nhân vật")
-                        instance.isDragging = true
-                        instance.controller.setState(SpriteState1.Touch)
-//                    }
+                if (distance > 1 || instance.controller.getState() == SpriteState1.WALKING) {
+                    instance.isDragging = true
+                    instance.controller.setState(SpriteState1.Touch)
 
                     val (screenWidth, screenHeight) = getScreenSize(this)
                     val spriteWidth = instance.view.width
@@ -229,18 +210,21 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
 
                     params.x = newX
                     params.y = newY
-                    windowManager.updateViewLayout(instance.view, params)
-                }
 
+                    try {
+                        windowManager.updateViewLayout(instance.view, params)
+                    } catch (e: IllegalArgumentException) {
+                        Log.e("FloatingSprite", "Failed to update view", e)
+                    }
+                }
                 return true
             }
 
             MotionEvent.ACTION_UP -> {
-                Log.d("MotionEvent", "ACTION_UP")
-                scope.launch {
+                // ✅ Dùng lifecycleScope thay vì scope riêng
+                lifecycleScope.launch {
                     val duration = System.currentTimeMillis() - touchDownTime
                     val wasDragging = instance.isDragging
-
                     instance.isDragging = false
 
                     val (screenWidth, screenHeight) = getScreenSize(this@FloatingSpriteService)
@@ -249,34 +233,27 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                     val groundY = screenHeight - spriteHeight
 
                     when {
-                        // ✅ Trường hợp click
-                        !wasDragging && duration < 1000 && instance.controller.getState() == SpriteState1.WALKING -> {
+                        !wasDragging && duration < 1000 &&
+                                instance.controller.getState() == SpriteState1.WALKING -> {
                             Log.d("SpriteTouch", "Click detected!")
                             instance.controller.setState(SpriteState1.CUSTOM)
                         }
 
-                        // ✅ Chỉ rơi xuống nếu chưa ở mặt đất
                         currentY < groundY -> {
-                            Log.d("SpriteTouch", "Fall down triggered (trên cao)")
-                            fallDown(instance,false)
+                            Log.d("SpriteTouch", "Fall down triggered")
+                            fallDown(instance, false)
                         }
 
-                        // ❌ Nếu đã ở mặt đất thì không cần rơi nữa
                         else -> {
-                            Log.d("SpriteTouch", "Đã ở mặt đất — không fall")
+                            Log.d("SpriteTouch", "Already on ground")
                         }
                     }
                 }
                 return true
             }
-
         }
-
         return false
     }
-
-
-
 
     @Composable
     fun SpriteContent(
@@ -287,18 +264,29 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
         ShimejiSprite(
             spriteState = spriteState,
             spriteFlip = spriteFlip,
-            onCustomAnimationFinished = {onCustomAnimationFinished()}
+            onCustomAnimationFinished = { onCustomAnimationFinished() }
         )
     }
 
     private fun startSpriteAnimation(instance: SpriteInstance) {
+        // ✅ Cancel job cũ trước khi tạo mới
         instance.moveJob?.cancel()
-        instance.moveJob = scope.launch {
-            fallDown(instance,true)
-//            delay(2000L)
-//            animateSpriteWindow(instance)
+        instance.moveJob = null
+
+        // ✅ Dùng lifecycleScope và xử lý exception
+        instance.moveJob = lifecycleScope.launch {
+            try {
+                fallDown(instance, true)
+            } catch (e: CancellationException) {
+                Log.d("FloatingSprite", "Animation cancelled")
+                throw e // Re-throw để coroutine biết đã bị cancel
+            } catch (e: Exception) {
+                Log.e("FloatingSprite", "Animation error", e)
+            }
         }
     }
+
+    // ✅ Thêm suspend và xử lý cancellation
     private suspend fun animateParamTo(
         instance: SpriteInstance,
         axis: String,
@@ -307,22 +295,22 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
         isMovingRight: Boolean,
         onComplete: () -> Unit = {}
     ) {
-        instance.moveJob?.cancel()
+        // ✅ Không cancel ở đây vì đã cancel từ caller
         val params = instance.params
         val start = if (axis == "x") params.x else params.y
         val distance = target - start
         val steps = 60
         val delayPerStep = durationMillis / steps
-        val isMovingRight11 = axis == "x" && target > start
-        val isMovingDown = axis == "y" && target > start
+
         val (screenWidth, screenHeight) = getScreenSize(this@FloatingSpriteService)
-        Log.d("animateParamTo", "animateParamTo: $screenWidth, $screenHeight")
         val spriteWidth = instance.view.width
         val spriteHeight = instance.view.height
 
         repeat(steps) { step ->
+            // ✅ Check cancellation
+            yield() // Hoặc dùng: if (!isActive) return
+
             if (instance.controller.getState() == SpriteState1.CUSTOM) return
-            // Dừng nếu sprite này đang bị kéo
             if (instance.isDragging) return
 
             val fraction = (step + 1).toFloat() / steps
@@ -331,29 +319,22 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
 
             try {
                 windowManager.updateViewLayout(instance.view, params)
-            } catch (e: Exception) {
+            } catch (e: IllegalArgumentException) {
+                Log.e("FloatingSprite", "Failed to update view", e)
                 return
             }
-//            val flip = when {
-//                axis == "x" && target > start -> SpriteFlip1.RIGHT
-//                axis == "x" && target < start -> SpriteFlip1.LEFT
-//////                axis == "y" && target > start -> SpriteFlip1.BOTTOM
-//                params.y <= 0 -> SpriteFlip1.TOP
-//                else -> SpriteFlip1.RIGHT
-//            }
+
+            // Update flip và state
             val isAtTop = params.y <= 0
             val isAtBottom = params.y >= screenHeight - spriteHeight
             val isAtLeft = params.x <= 0
             val isAtRight = params.x >= screenWidth - spriteWidth
 
-            val isWalking = instance.controller.getState() == SpriteState1.WALKING
-            val isDashing = instance.controller.getState() == SpriteState1.DASH
             when {
                 isAtLeft || isAtRight -> instance.controller.setState(SpriteState1.CLIMB)
                 isAtBottom -> instance.controller.setState(SpriteState1.WALKING)
             }
-            Log.d("SpriteTouch", "Touch duration111:  ${instance.controller.getState() == SpriteState1.WALKING}")
-            // Cập nhật flip đúng cho sprite này
+
             val flip = when {
                 params.y <= 0 -> SpriteFlip1.TOP
                 params.x <= 0 ||
@@ -367,232 +348,206 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                 else -> if (isMovingRight) null else SpriteFlip1.RIGHT
             }
 
-            Log.d("animateParamTo", "Hướng hiện tại: $flip")
-            Log.d("animateParamTo", "starye: ${instance.controller.getState()}")
-
-// 🧩 Chuyển trạng thái hợp lý
-            // Gọi updater của sprite này
-//            val flipUpdater = instance.view.getTag(R.id.sprite_flip_updater) as? (SpriteFlip?) -> Unit
             instance.controller.setFlip(flip)
-
             delay(delayPerStep.toLong())
         }
 
-        // Hoàn thành
         onComplete()
     }
 
-    private suspend fun animateSpriteWindow(instance: SpriteInstance,) {
-            instance.moveJob?.cancel()
+    private suspend fun animateSpriteWindow(instance: SpriteInstance) {
+        // ✅ Không cần cancel ở đây, caller đã xử lý
+        val (screenWidth, screenHeight) = getScreenSize(this@FloatingSpriteService)
+        val spriteWidth = instance.view.width
+        val spriteHeight = instance.view.height
+        val margin = 0
 
-                val (screenWidth, screenHeight) = getScreenSize(this@FloatingSpriteService)
-                val spriteWidth =    instance.view.width
-                val spriteHeight =    instance.view.height
-                val margin = 0
-                var isMovingRight = true // Theo dõi hướng di chuyển ngang
-                while (!instance.isDragging) {
+        while (coroutineContext.isActive && !instance.isDragging) { // ✅ Check isActive
+            val isAtTop = instance.params.y <= margin
+            val isAtBottom = instance.params.y >= screenHeight - spriteHeight - margin
+            val isAtLeft = instance.params.x <= 0
+            val isAtRight = instance.params.x >= screenWidth - spriteWidth - margin
 
-                    // Thêm biến kiểm tra vị trí góc để dễ debug và xử lý
-                    val isAtTop = instance.params.y <= margin
-                    val isAtBottom = instance.params.y >= screenHeight - spriteHeight - margin
+            val action = Random.nextInt(100)
 
-                    val isAtLeft =   instance. params.x <= 0
-                    val isAtRight =    instance.params.x >= screenWidth - spriteWidth - margin
-//                    Log.d("duonghx11111", "aaaa ${instance.params.y} + ${instance.params.x}")
-                    // Chọn tỷ lệ dựa trên vị trí (cạnh trái, cạnh phải, hoặc ở giữa)
-                    val action = Random.nextInt(100)
-
+            when {
+                isAtLeft -> {
                     when {
-                        // Cạnh trái: lên 10%, xuống 85%, nhảy 5%
-                        isAtLeft -> {  // Sử dụng isAtLeft thay vì params.x <= 0 để nhất quán
-                            Log.d("duonghx11111", "canh trai")
-                            when {
-                                action < 10 -> { // 0-9: 10% - Di chuyển lên
-                                    Log.d("duonghx", "canh trai len: ${   instance.params.x}, ${   instance.params.y}")
-                                    val maxUpDistance =    instance.params.y - margin // Khoảng cách tối đa có thể đi lên
-                                    if (maxUpDistance > 180) {
-                                        val targetY =    instance.params.y - Random.nextInt(180, min(200, maxUpDistance))
-                                        animateParamTo(   instance, "y", targetY, 2000, isMovingRight)
-                                    } else if (maxUpDistance > 0) {
-                                        val targetY = margin
-                                        animateParamTo(  instance, "y", targetY, 2000, isMovingRight)
-                                    } else {
-                                        // Đã ở top (góc trên trái), buộc di chuyển ngang sang phải trên cạnh trên
-                                        val targetX = screenWidth - spriteWidth - margin
-                                        animateParamTo(instance, "x", targetX, 8000, true)  // isMovingRight = true, không ! vì đổi từ up sang right
-                                    }
-                                }
-                                action < 95 -> { // 10-94: 85% - Di chuyển xuống
-                                    Log.d("duonghx", "canh trai xuong: ${instance.params.x}, ${instance.params.y}")
-                                    val maxDownDistance = screenHeight - spriteHeight - margin - instance.params.y
-                                    if (maxDownDistance > 180) {
-                                        val targetY = instance.params.y + Random.nextInt(180, min(200, maxDownDistance))
-                                        animateParamTo(instance, "y", targetY, 2000, isMovingRight)
-                                    } else if (maxDownDistance > 0) {
-                                        val targetY = screenHeight - spriteHeight - margin
-                                        animateParamTo(instance, "y", targetY, 2000, isMovingRight)
-                                    } else {
-                                        // Đã ở bottom (góc dưới trái), buộc di chuyển ngang sang phải trên cạnh dưới
-                                        val targetX = screenWidth - spriteWidth - margin
-                                        animateParamTo(instance, "x", targetX, 8000, true)  // isMovingRight = true, không ! vì đổi từ down sang right
-                                    }
-                                }
-                                else -> { // 95-99: 5% - Nhảy sang cạnh phải
-                                    instance.controller.setState(SpriteState1.DASH)
-                                    Log.d("duonghx", "canh trai nhay: ${instance.params.x}, ${instance.params.y}")
-                                    val targetX = screenWidth - spriteWidth - margin
-                                    animateParamTo(instance, "x", targetX, 700, isMovingRight)
-                                }
+                        action < 10 -> { // Di chuyển lên
+                            val maxUpDistance = instance.params.y - margin
+                            if (maxUpDistance > 180) {
+                                val targetY = instance.params.y - Random.nextInt(180, min(200, maxUpDistance))
+                                animateParamTo(instance, "y", targetY, 2000, false)
+                            } else if (maxUpDistance > 0) {
+                                val targetY = margin
+                                animateParamTo(instance, "y", targetY, 2000, false)
+                            } else {
+                                val targetX = screenWidth - spriteWidth - margin
+                                animateParamTo(instance, "x", targetX, 8000, true)
                             }
                         }
-                        // Cạnh phải: lên 85%, xuống 10%, nhảy 5%
-                        isAtRight -> {  // Sử dụng isAtRight
-                            Log.d("duonghx11111", "canh phai")
-
-                            when {
-                                action < 85 -> { // 0-84: 85% - Di chuyển lên
-                                    Log.d("duonghx", "canh phai len: ${instance.params.x}, ${instance.params.y}")
-                                    val maxUpDistance = instance.params.y - margin
-                                    if (maxUpDistance > 180) {
-                                        val targetY = instance.params.y - Random.nextInt(180, min(200, maxUpDistance))
-                                        animateParamTo(instance, "y", targetY, 2000, isMovingRight)
-                                    } else if (maxUpDistance > 0) {
-                                        val targetY = margin
-                                        animateParamTo(instance, "y", targetY, 2000, isMovingRight)
-                                    } else {
-                                        // Đã ở top (góc trên phải), buộc di chuyển ngang sang trái trên cạnh trên
-                                        val targetX = 0
-                                        animateParamTo(instance, "x", targetX, 8000, false)  // isMovingRight = false, không ! vì đổi từ up sang left
-                                    }
-                                }
-                                action < 95 -> { // 85-94: 10% - Di chuyển xuống
-                                    Log.d("duonghx", "canh phai xuong: ${instance.params.x}, ${instance.params.y}")
-                                    val maxDownDistance = screenHeight - spriteHeight - margin - instance.params.y
-                                    if (maxDownDistance > 180) {
-                                        val targetY = instance.params.y + Random.nextInt(180, min(200, maxDownDistance))
-                                        animateParamTo(instance, "y", targetY, 2000, isMovingRight)
-                                    } else if (maxDownDistance > 0) {
-                                        val targetY = screenHeight - spriteHeight - margin
-                                        animateParamTo(instance, "y", targetY, 2000, isMovingRight)
-                                    } else {
-                                        // Đã ở bottom (góc dưới phải), buộc di chuyển ngang sang trái trên cạnh dưới
-                                        val targetX = 0
-                                        animateParamTo(instance, "x", targetX, 8000, false)  // isMovingRight = false, không ! vì đổi từ down sang left
-                                    }
-                                }
-                                else -> { // 95-99: 5% - Nhảy sang cạnh trái
-                                    instance.controller.setState(SpriteState1.DASH)
-                                    Log.d("duonghx", "canh phai nhay: ${instance.params.x}, ${instance.params.y}")
-                                    val targetX = 0
-                                    animateParamTo(instance, "x", targetX, 700, isMovingRight)
-                                }
+                        action < 95 -> { // Di chuyển xuống
+                            val maxDownDistance = screenHeight - spriteHeight - margin - instance.params.y
+                            if (maxDownDistance > 180) {
+                                val targetY = instance.params.y + Random.nextInt(180, min(200, maxDownDistance))
+                                animateParamTo(instance, "y", targetY, 2000, false)
+                            } else if (maxDownDistance > 0) {
+                                val targetY = screenHeight - spriteHeight - margin
+                                animateParamTo(instance, "y", targetY, 2000, false)
+                            } else {
+                                val targetX = screenWidth - spriteWidth - margin
+                                animateParamTo(instance, "x", targetX, 8000, true)
                             }
                         }
-                        isAtTop -> {
-                            Log.d("duonghx11111", "canh tren ")
-
-
-                        }
-
-                        isAtBottom -> {
-                            Log.d("duonghx11111", "canh duoi ")
-                            when {
-                                action < 60 -> { // 0-59: 60% - Đi sang phải
-                                    delay(300)
-                                    Log.d("aaaaa",",60")
-                                    val maxRightDistance = screenWidth - spriteWidth - margin - instance.params.x
-                                    if (maxRightDistance > 180) {
-                                        val targetX = instance.params.x + Random.nextInt(180, min(200, maxRightDistance))
-                                        animateParamTo(instance, "x", targetX, 4000, true) // true = sang phải
-                                    } else if (maxRightDistance > 0) {
-                                        val targetX = screenWidth - spriteWidth - margin
-                                        animateParamTo(instance, "x", targetX, 4000, true)
-                                    } else {
-                                        // Đã ở góc phải dưới → buộc đi lên
-                                        val targetY = margin
-                                        animateParamTo(instance, "y", targetY, 2000, false)
-                                    }
-//                                    instance.controller.setFlip(SpriteFlip1.LEFT)
-                                }
-
-                                action < 100 -> { // 60-99: 40% - Đi sang trái
-                                    Log.d("aaaaa","40")
-//                                    instance.controller.setFlip(SpriteFlip1.RIGHT)
-                                    val maxLeftDistance = instance.params.x - margin
-                                    if (maxLeftDistance > 180) {
-                                        val targetX = instance.params.x - Random.nextInt(180, min(200, maxLeftDistance))
-                                        animateParamTo(instance, "x", targetX, 4000, false) // false = sang trái
-                                    } else if (maxLeftDistance > 0) {
-                                        val targetX = margin
-                                        animateParamTo(instance, "x", targetX, 4000, false)
-                                    } else {
-                                        // Đã ở góc trái dưới → buộc đi lên
-                                        val targetY = margin
-                                        animateParamTo(instance, "y", targetY, 2000, true)
-                                    }
-                                }
-                            }
-
-                        }
-                        else -> {
+                        else -> { // Nhảy sang phải
+                            instance.controller.setState(SpriteState1.DASH)
+                            val targetX = screenWidth - spriteWidth - margin
+                            animateParamTo(instance, "x", targetX, 700, true)
                         }
                     }
-                    // Thêm độ trễ nhỏ giữa các hành động để tránh di chuyển quá nhanh
-//                    delay(100)
                 }
 
+                isAtRight -> {
+                    when {
+                        action < 85 -> { // Di chuyển lên
+                            val maxUpDistance = instance.params.y - margin
+                            if (maxUpDistance > 180) {
+                                val targetY = instance.params.y - Random.nextInt(180, min(200, maxUpDistance))
+                                animateParamTo(instance, "y", targetY, 2000, false)
+                            } else if (maxUpDistance > 0) {
+                                val targetY = margin
+                                animateParamTo(instance, "y", targetY, 2000, false)
+                            } else {
+                                val targetX = 0
+                                animateParamTo(instance, "x", targetX, 8000, false)
+                            }
+                        }
+                        action < 95 -> { // Di chuyển xuống
+                            val maxDownDistance = screenHeight - spriteHeight - margin - instance.params.y
+                            if (maxDownDistance > 180) {
+                                val targetY = instance.params.y + Random.nextInt(180, min(200, maxDownDistance))
+                                animateParamTo(instance, "y", targetY, 2000, false)
+                            } else if (maxDownDistance > 0) {
+                                val targetY = screenHeight - spriteHeight - margin
+                                animateParamTo(instance, "y", targetY, 2000, false)
+                            } else {
+                                val targetX = 0
+                                animateParamTo(instance, "x", targetX, 8000, false)
+                            }
+                        }
+                        else -> { // Nhảy sang trái
+                            instance.controller.setState(SpriteState1.DASH)
+                            val targetX = 0
+                            animateParamTo(instance, "x", targetX, 700, false)
+                        }
+                    }
+                }
 
+                isAtBottom -> {
+                    when {
+                        action < 60 -> { // Đi sang phải
+                            delay(300)
+                            val maxRightDistance = screenWidth - spriteWidth - margin - instance.params.x
+                            if (maxRightDistance > 180) {
+                                val targetX = instance.params.x + Random.nextInt(180, min(200, maxRightDistance))
+                                animateParamTo(instance, "x", targetX, 4000, true)
+                            } else if (maxRightDistance > 0) {
+                                val targetX = screenWidth - spriteWidth - margin
+                                animateParamTo(instance, "x", targetX, 4000, true)
+                            } else {
+                                val targetY = margin
+                                animateParamTo(instance, "y", targetY, 2000, false)
+                            }
+                        }
+                        else -> { // Đi sang trái
+                            val maxLeftDistance = instance.params.x - margin
+                            if (maxLeftDistance > 180) {
+                                val targetX = instance.params.x - Random.nextInt(180, min(200, maxLeftDistance))
+                                animateParamTo(instance, "x", targetX, 4000, false)
+                            } else if (maxLeftDistance > 0) {
+                                val targetX = margin
+                                animateParamTo(instance, "x", targetX, 4000, false)
+                            } else {
+                                val targetY = margin
+                                animateParamTo(instance, "y", targetY, 2000, true)
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
-    // 👉 Hàm rơi xuống (gravity effect)
-    private fun fallDown(instance: SpriteInstance, isBoola: Boolean) {
+    // ✅ Sửa fallDown để xử lý coroutine đúng cách
+    private fun fallDown(instance: SpriteInstance, isInitial: Boolean) {
         instance.view.post {
-            scope.launch {
-                // 🧩 Huỷ mọi job di chuyển cũ trước khi rơi
-                instance.moveJob?.cancel()
-                instance.moveJob = null
 
+
+        // ✅ Cancel job cũ
+        instance.moveJob?.cancel()
+        instance.moveJob = null
+
+        // ✅ Tạo job mới trong lifecycleScope
+        instance.moveJob = lifecycleScope.launch {
+            try {
                 val (_, screenHeight) = getScreenSize(this@FloatingSpriteService)
                 val spriteHeight = instance.view.height
                 val groundY = screenHeight - spriteHeight
 
                 instance.controller.setState(SpriteState1.FALL)
 
-                while (instance.params.y < groundY) {
-                    if (instance.isDragging) return@launch
+                while (isActive && instance.params.y < groundY && !instance.isDragging) {
                     instance.params.y += 20
-                    windowManager.updateViewLayout(instance.view, instance.params)
+
+                    try {
+                        windowManager.updateViewLayout(instance.view, instance.params)
+                    } catch (e: IllegalArgumentException) {
+                        Log.e("FloatingSprite", "Failed to update view during fall", e)
+                        return@launch
+                    }
+
                     delay(10)
                 }
+
+                if (!isActive || instance.isDragging) return@launch
+
                 instance.controller.setState(SpriteState1.Bottom)
                 delay(750L)
-                animateSpriteWindow(instance)
+Log.d("bbbb","${instance.params.y}")
+                Log.d("bbbb111","${instance.params.y}")
+                if (isActive && !instance.isDragging) {
+                    animateSpriteWindow(instance)
+                }
+            } catch (e: CancellationException) {
+                Log.d("FloatingSprite", "Fall animation cancelled")
+                throw e
+            } catch (e: Exception) {
+                Log.e("FloatingSprite", "Fall animation error", e)
             }
-        }
+        }}
     }
 
     private suspend fun awaitViewMeasured(view: View): Int = suspendCancellableCoroutine { cont ->
-            if (view.height > 0) {
-                cont.resume(view.height)
-                return@suspendCancellableCoroutine
-            }
+        if (view.height > 0) {
+            cont.resume(view.height)
+            return@suspendCancellableCoroutine
+        }
 
-            val listener = object : ViewTreeObserver.OnGlobalLayoutListener {
-                override fun onGlobalLayout() {
-                    if (view.height > 0) {
-                        view.viewTreeObserver.removeOnGlobalLayoutListener(this)
-                        cont.resume(view.height)
-                    }
+        val listener = object : ViewTreeObserver.OnGlobalLayoutListener {
+            override fun onGlobalLayout() {
+                if (view.height > 0) {
+                    view.viewTreeObserver.removeOnGlobalLayoutListener(this)
+                    cont.resume(view.height)
                 }
-            }
-
-            view.viewTreeObserver.addOnGlobalLayoutListener(listener)
-
-            cont.invokeOnCancellation {
-                view.viewTreeObserver.removeOnGlobalLayoutListener(listener)
             }
         }
 
+        view.viewTreeObserver.addOnGlobalLayoutListener(listener)
+
+        cont.invokeOnCancellation {
+            view.viewTreeObserver.removeOnGlobalLayoutListener(listener)
+        }
+    }
 
     @Suppress("DEPRECATION")
     private fun getScreenSize(context: Context): Pair<Int, Int> {
@@ -601,10 +556,8 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
             val insets = windowMetrics.windowInsets.getInsetsIgnoringVisibility(
                 WindowInsets.Type.navigationBars() or WindowInsets.Type.displayCutout()
             )
-//            val width = windowMetrics.bounds.width() - insets.left - insets.right
             val width = windowMetrics.bounds.width()
-//            val height = windowMetrics.bounds.height() - insets.top - insets.bottom
-            val height = windowMetrics.bounds.height()- insets.bottom
+            val height = windowMetrics.bounds.height() - insets.bottom
             width to height
         } else {
             val displayMetrics = context.resources.displayMetrics
@@ -612,7 +565,14 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
         }
     }
 
+    // ✅ Cleanup khi service destroy
+    override fun onDestroy() {
+        stopAllSprites()
+        super.onDestroy()
+    }
 }
+
+// ✅ SpriteController giữ nguyên
 class SpriteController {
     private val _state = MutableStateFlow(SpriteState1.Idle)
     val state: StateFlow<SpriteState1> = _state.asStateFlow()
@@ -628,10 +588,7 @@ class SpriteController {
         _flip.value = flip
     }
 
-    fun getState() : SpriteState1 {
-        return _state.value
-    }
-    fun getFlip() : SpriteFlip1? {
-        return _flip.value
-    }
+    fun getState(): SpriteState1 = _state.value
+
+    fun getFlip(): SpriteFlip1? = _flip.value
 }

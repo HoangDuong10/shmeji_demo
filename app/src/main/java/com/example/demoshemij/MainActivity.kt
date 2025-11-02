@@ -308,7 +308,7 @@ fun ShimejiSprite(
                         }
                     }
                 }
-//                .background(Color.Red)
+                .background(Color.Red)
                 ,
             contentScale = ContentScale.FillBounds
 
