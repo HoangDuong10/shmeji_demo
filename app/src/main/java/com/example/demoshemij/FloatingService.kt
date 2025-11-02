@@ -190,6 +190,9 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
 
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
+                if(instance.controller.getState() == SpriteState1.CLIMB){
+                    instance.isDragging = true
+                }
                 Log.d("MotionEvent", "ACTION_DOWN")
                 // ❌ Không set isDragging ở đây
                 instance.moveJob?.cancel()
@@ -205,14 +208,15 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                 val dx = event.rawX - instance.initialTouchX
                 val dy = event.rawY - instance.initialTouchY
                 val distance = sqrt(dx * dx + dy * dy)
+                Log.d("MotionEvent", "a1${distance}")
 
                 // ✅ Nếu người dùng di chuyển đủ xa mới xem là kéo
                 if (distance > 1 ||  instance.controller.getState() == SpriteState1.WALKING) { // có thể chỉnh ngưỡng này, ví dụ 5f hoặc 15f
-                    if (!instance.isDragging) {
+//                    if (!instance.isDragging) {
                         Log.d("MotionEvent", "Bắt đầu kéo nhân vật")
                         instance.isDragging = true
                         instance.controller.setState(SpriteState1.Touch)
-                    }
+//                    }
 
                     val (screenWidth, screenHeight) = getScreenSize(this)
                     val spriteWidth = instance.view.width
