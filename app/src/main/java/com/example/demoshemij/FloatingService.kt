@@ -341,8 +341,7 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
             // ✅ Check cancellation
             yield() // Hoặc dùng: if (!isActive) return
 
-            if (instance.controller.getState() == SpriteState1.CUSTOM) return
-            if (instance.isDragging) return
+            if (instance.controller.getState() == SpriteState1.CUSTOM || instance.isDragging || instance.controller.getState() == SpriteState1.Idle) return
 
             val fraction = (step + 1).toFloat() / steps
             val value = start + (distance * fraction).toInt()
@@ -431,9 +430,14 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                             }
                         }
                         else -> { // Nhảy sang phải
-                            instance.controller.setState(SpriteState1.DASH)
-                            val targetX = screenWidth - spriteWidth - margin
-                            animateParamTo(instance, "x", targetX, 700, true)
+                            if (instance.params.y <= spriteHeight) {
+                                Log.d("duonghx", "đang ở gần đỉnh, không cho nhảy sang trái")
+
+                            }else {
+                                instance.controller.setState(SpriteState1.DASH)
+                                val targetX = screenWidth - spriteWidth - margin
+                                animateParamTo(instance, "x", targetX, 700, true)
+                            }
                         }
                     }
                 }
@@ -467,9 +471,14 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                             }
                         }
                         else -> { // Nhảy sang trái
-                            instance.controller.setState(SpriteState1.DASH)
-                            val targetX = 0
-                            animateParamTo(instance, "x", targetX, 700, false)
+                            if (instance.params.y <= spriteHeight) {
+                                Log.d("duonghx", "đang ở gần đỉnh, không cho nhảy sang trái")
+
+                            }else {
+                                instance.controller.setState(SpriteState1.DASH)
+                                val targetX = 0
+                                animateParamTo(instance, "x", targetX, 700, false)
+                            }
                         }
                     }
                 }
@@ -478,6 +487,11 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                     when {
                         action < 60 -> { // Đi sang phải
                             delay(300)
+                            if (Random.nextInt(100) < 20) {
+                                instance.controller.setState(SpriteState1.Idle)
+                                delay(Random.nextLong(2000, 3000)) // Nghỉ 2–3 giây
+                                instance.controller.setState(SpriteState1.WALKING)
+                            }
                             val maxRightDistance = screenWidth - spriteWidth - margin - instance.params.x
                             if (maxRightDistance > 180) {
                                 val targetX = instance.params.x + Random.nextInt(180, min(200, maxRightDistance))
@@ -491,6 +505,11 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                             }
                         }
                         else -> { // Đi sang trái
+                            if (Random.nextInt(100) < 20) {
+                                instance.controller.setState(SpriteState1.Idle)
+                                delay(Random.nextLong(2000, 3000)) // Nghỉ 2–3 giây
+                                instance.controller.setState(SpriteState1.WALKING)
+                            }
                             val maxLeftDistance = instance.params.x - margin
                             if (maxLeftDistance > 180) {
                                 val targetX = instance.params.x - Random.nextInt(180, min(200, maxLeftDistance))
@@ -508,8 +527,14 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                 Log.d("FloatingSprite", "Sprite in middle")
                 delay(100)
                 when {
+
                     action < 60 -> { // Đi sang phải
                         delay(300)
+                        if (Random.nextInt(100) < 20) {
+                            instance.controller.setState(SpriteState1.Idle)
+                            delay(Random.nextLong(2000, 3000)) // Nghỉ 2–3 giây
+                            instance.controller.setState(SpriteState1.WALKING)
+                        }
                         val maxRightDistance = screenWidth - spriteWidth - margin - instance.params.x
                         if (maxRightDistance > 180) {
                             val targetX = instance.params.x + Random.nextInt(180, min(200, maxRightDistance))
@@ -523,6 +548,11 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                         }
                     }
                     else -> { // Đi sang trái
+                        if (Random.nextInt(100) < 20) {
+                            instance.controller.setState(SpriteState1.Idle)
+                            delay(Random.nextLong(2000, 3000)) // Nghỉ 2–3 giây
+                            instance.controller.setState(SpriteState1.WALKING)
+                        }
                         val maxLeftDistance = instance.params.x - margin
                         if (maxLeftDistance > 180) {
                             val targetX = instance.params.x - Random.nextInt(180, min(200, maxLeftDistance))
@@ -572,6 +602,9 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
 
                     delay(10)
                 }
+                Log.d("ccccc","${groundY}")
+                Log.d("cccc123c","${instance.params.y}")
+
 
                 if (!isActive || instance.isDragging) return@launch
 

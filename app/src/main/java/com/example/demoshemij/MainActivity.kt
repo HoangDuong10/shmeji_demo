@@ -283,25 +283,33 @@ fun ShimejiSprite(
                         spriteFlip == SpriteFlip1.RIGHT && spriteState!= SpriteState1.WALKING -> (33).dp
                         else -> 0.dp
                     },
-                    y = when (spriteFlip) {
-                        SpriteFlip1.TOP -> (-33).dp
+                    y = when {
+                        // ⚡ Chỉ khi leo trần mới nâng sprite lên -33dp
+                        spriteFlip == SpriteFlip1.TOP && spriteState == SpriteState1.CLIMB -> (-33).dp
                         else -> 0.dp
-                    },
+                    }
                 )
                 .graphicsLayer {
-                    when (spriteFlip) {
-                        SpriteFlip1.LEFT -> {
-                            scaleX = 1f
-                            rotationZ = 0f
-                        }
-                        SpriteFlip1.RIGHT -> {
-                            scaleX = -1f
-                            rotationZ = 0f
-                        }
-                        SpriteFlip1.TOP -> {
+                    when {
+                        // ⚡ Nếu đang TOUCH hoặc FALL → luôn bình thường
+
+                        // ⚡ Nếu đang leo tường (CLIMB) + hướng TOP → xoay 90°
+                        spriteState == SpriteState1.CLIMB && spriteFlip == SpriteFlip1.TOP -> {
                             scaleX = 1f
                             rotationZ = 90f
                         }
+
+                        // ⚡ Các hướng khác giữ nguyên logic cũ
+                        spriteFlip == SpriteFlip1.LEFT -> {
+                            scaleX = 1f
+                            rotationZ = 0f
+                        }
+
+                        spriteFlip == SpriteFlip1.RIGHT -> {
+                            scaleX = -1f
+                            rotationZ = 0f
+                        }
+
                         else -> {
                             scaleX = 1f
                             rotationZ = 0f
