@@ -131,7 +131,7 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                     spriteFlip = spriteFlip,
                     onCustomAnimationFinished = {
                         instance?.controller?.setState(SpriteState1.WALKING)
-                        an
+                        instance?.let { resumeSpriteAnimation(it) }
                     }
                 )
             }
@@ -166,6 +166,37 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
         newView.setOnTouchListener { _, event -> handleTouch(instance, event) }
         spriteList.add(instance)
     }
+
+    private fun resumeSpriteAnimation(instance: SpriteInstance) {
+        // Kiểm tra xem có đang dragging không
+        if (instance.isDragging) return
+
+        // Cancel job cũ nếu có
+        instance.moveJob?.cancel()
+        instance.moveJob = null
+
+        // Tạo job mới để tiếp tục animation
+        instance.moveJob = lifecycleScope.launch {
+            try {
+                val (_, screenHeight) = getScreenSize(this@FloatingSpriteService)
+                val spriteHeight = instance.view.height
+                val currentY = instance.params.y
+                val groundY = screenHeight - spriteHeight
+
+                // Nếu đang trên cao, rơi xuống trước
+                if (currentY < groundY - 20) {
+                    fallDown(instance, false)
+                } else {
+                    // Nếu đã ở mặt đất, tiếp tục di chuyển bình thường
+                    animateSpriteWindow(instance)
+                }
+            } catch (e: CancellationException) {
+                Log.d("FloatingSprite", "Resume animation cancelled")
+                throw e
+            } catch (e: Exception) {
+                Log.e("FloatingSprite", "Resume animation error", e)
+            }
+        }}
 
     private var touchDownTime = 0L
 
@@ -479,7 +510,7 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
     }
 
     // ✅ Sửa fallDown để xử lý coroutine đúng cách
-    private fun fallDown(instance: SpriteInstance, isInitial: Boolean) {
+    private fun fallDown(instance: SpriteInstance,isInitial: Boolean) {
         instance.view.post {
 
 
@@ -513,11 +544,15 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
 
                 instance.controller.setState(SpriteState1.Bottom)
                 delay(750L)
+                if(isInitial){
+                    instance.controller.setState(SpriteState1.CUSTOM)
+                }else{
+                    if (isActive && !instance.isDragging) {
+                        animateSpriteWindow(instance)
+                    }
+                }
 Log.d("bbbb","${instance.params.y}")
                 Log.d("bbbb111","${instance.params.y}")
-                if (isActive && !instance.isDragging) {
-                    animateSpriteWindow(instance)
-                }
             } catch (e: CancellationException) {
                 Log.d("FloatingSprite", "Fall animation cancelled")
                 throw e
