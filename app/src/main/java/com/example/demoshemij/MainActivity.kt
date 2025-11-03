@@ -276,7 +276,7 @@ fun ShimejiSprite(
     val scaleFactor = 0.2f
     val widthDp = with(LocalDensity.current) { (imageBitmap.width * scaleFactor).toDp() }
     Box(
-        modifier = Modifier.size(160.dp),
+        modifier = Modifier.size(200.dp*(786/977f)),
                 contentAlignment = Alignment.TopEnd
     ) {
         Image(
@@ -330,7 +330,7 @@ fun ShimejiSprite(
                         }
                     }
                 }
-                .background(Color.Red)
+//                .background(Color.Red)
                 ,
             contentScale = ContentScale.FillBounds
 
