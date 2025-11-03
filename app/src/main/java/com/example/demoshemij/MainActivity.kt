@@ -208,6 +208,7 @@ fun ShimejiSprite(
     val climbImages = remember { listOf(R.drawable.climb_1, R.drawable.climb_2, R.drawable.climb_3) }
     val customImage = remember { listOf(R.drawable.custom_1, R.drawable.custom_2, R.drawable.custom_3, R.drawable.custom_4, R.drawable.custom_5, R.drawable.custom_6, R.drawable.custom_7) }
     val walkingImages = remember { listOf(R.drawable.walking_1, R.drawable.walking_2) }
+    var width by  remember { mutableStateOf(0) }
     val idleDelay = 300L
     val touchDelay = 250L
     val bottomDelay = 500L
@@ -218,14 +219,28 @@ fun ShimejiSprite(
     LaunchedEffect(spriteState) {
         currentFrame = 0
         when (spriteState) {
-            SpriteState1.Idle -> animateFrames(idleImages, idleDelay) { currentFrame = it }
-            SpriteState1.Touch -> animateFrames(touchImages, touchDelay) { currentFrame = it }
+            SpriteState1.Idle -> {
+                width = 160
+                animateFrames(idleImages, idleDelay) { currentFrame = it }
+
+            }
+            SpriteState1.Touch -> {
+                width = 100
+                animateFrames(touchImages, touchDelay) { currentFrame = it }
+
+            }
             SpriteState1.Bottom -> animateFrames(bottomImages, bottomDelay) { currentFrame = it }
             SpriteState1.FALL -> animateFrames(fallImages, fallDelay) { currentFrame = it }
             SpriteState1.CLIMB -> animateFrames(climbImages, dashLoopDelay) { currentFrame = it }
             SpriteState1.DASH -> animateDash(dashImages, dashStartDelay, dashLoopDelay) { currentFrame = it }
-            SpriteState1.CUSTOM -> animateCustom(images = customImage, setFrame = {currentFrame = it}, onFinished = {onCustomAnimationFinished()})
-            SpriteState1.WALKING -> animateFrames(walkingImages, fallDelay) { currentFrame = it }
+            SpriteState1.CUSTOM -> {
+                width = 300
+                animateCustom(images = customImage, setFrame = {currentFrame = it}, onFinished = {onCustomAnimationFinished()})
+            }
+            SpriteState1.WALKING -> {
+                width = 50
+                animateFrames(walkingImages, fallDelay) { currentFrame = it }
+            }
         }
     }
 
@@ -261,9 +276,7 @@ fun ShimejiSprite(
     val scaleFactor = 0.2f
     val widthDp = with(LocalDensity.current) { (imageBitmap.width * scaleFactor).toDp() }
     Box(
-        modifier = Modifier.size(160.dp).graphicsLayer {
-            clip = false // 👈 Cho phép phần tử con vẽ tràn ra ngoài
-        },
+        modifier = Modifier.size(160.dp),
                 contentAlignment = Alignment.TopEnd
     ) {
         Image(
@@ -277,7 +290,8 @@ fun ShimejiSprite(
                                 spriteState == SpriteState1.FALL ||
                                 spriteState == SpriteState1.Bottom ||
                                 spriteState == SpriteState1.DASH ||
-                                spriteState == SpriteState1.CUSTOM
+                                spriteState == SpriteState1.CUSTOM ||
+                                spriteState == SpriteState1.Idle
                             -> 0.dp
                         spriteFlip == SpriteFlip1.LEFT && spriteState!= SpriteState1.WALKING -> (-33).dp
                         spriteFlip == SpriteFlip1.RIGHT && spriteState!= SpriteState1.WALKING -> (33).dp

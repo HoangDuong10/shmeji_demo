@@ -199,6 +199,7 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
         }}
 
     private var touchDownTime = 0L
+    private val touchSlop = 10
 
     private fun handleTouch(instance: SpriteInstance, event: MotionEvent): Boolean {
         val params = instance.params
@@ -225,8 +226,12 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                 val dx = event.rawX - instance.initialTouchX
                 val dy = event.rawY - instance.initialTouchY
                 val distance = sqrt(dx * dx + dy * dy)
-
-                if (distance > 1 || instance.controller.getState() == SpriteState1.WALKING) {
+                val duration = System.currentTimeMillis() - touchDownTime
+                if (distance < touchSlop) {
+                    return@handleTouch true
+                }
+                Log.d("SpriteTouch111", "Touch duration1111: $distance ${instance.controller.getState()}")
+                if (distance > 1 || instance.controller.getState() == SpriteState1.WALKING ) {
                     instance.isDragging = true
                     instance.controller.setState(SpriteState1.Touch)
 
@@ -263,19 +268,21 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                     val currentY = instance.params.y
                     val groundY = screenHeight - spriteHeight
 
+                    Log.d("SpriteTouch111", "Touch duration: $duration ms, Was dragging: $wasDragging va ${instance.controller.getState()}")
                     when {
-                        !wasDragging && duration < 1000 &&
+                        !wasDragging && duration < 2000 &&
                                 instance.controller.getState() == SpriteState1.WALKING -> {
-                            Log.d("SpriteTouch", "Click detected!")
+                            Log.d("SpriteTouch111", "Click detected!")
                             instance.controller.setState(SpriteState1.CUSTOM)
                         }
 
-                        currentY < groundY -> {
-                            Log.d("SpriteTouch", "Fall down triggered")
-                            fallDown(instance, false)
-                        }
+//                        currentY < groundY -> {
+//                            Log.d("SpriteTouch", "Fall down triggered")
+//                            fallDown(instance, false)
+//                        }
 
                         else -> {
+                            fallDown(instance, false)
                             Log.d("SpriteTouch", "Already on ground")
                         }
                     }
