@@ -283,6 +283,7 @@ fun ShimejiSprite(
             painter = painterResource(id = imageRes),
             contentDescription = null,
             modifier = Modifier
+                .size(200.dp*(786/977f))
                 .offset(
                     x = when {
                         spriteFlip == SpriteFlip1.TOP ||
@@ -332,7 +333,7 @@ fun ShimejiSprite(
                 }
 //                .background(Color.Red)
                 ,
-            contentScale = ContentScale.FillBounds
+            contentScale = ContentScale.Fit
 
         )
     }
