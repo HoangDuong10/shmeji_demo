@@ -535,10 +535,12 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                 when {
                     action < 60 -> { // Đi sang phải
                         delay(300)
-                        if (Random.nextInt(100) < 20) {
-                            instance.controller.setState(SpriteState1.Idle)
-                            delay(Random.nextLong(2000, 3000))
-                            instance.controller.setState(SpriteState1.WALKING)
+                        if(instance.controller.getState()==SpriteState1.WALKING ){
+                            if (Random.nextInt(100) < 20) {
+                                instance.controller.setState(SpriteState1.Idle)
+                                delay(Random.nextLong(2000, 3000))
+                                instance.controller.setState(SpriteState1.WALKING)
+                            }
                         }
                         val maxRightDistance = (screenWidth - spriteWidth * 2 / 3) - margin - instance.params.x  // ✅ Cập nhật
                         if (maxRightDistance > 180) {
@@ -553,10 +555,12 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                         }
                     }
                     else -> { // Đi sang trái
-                        if (Random.nextInt(100) < 20) {
-                            instance.controller.setState(SpriteState1.Idle)
-                            delay(Random.nextLong(2000, 3000))
-                            instance.controller.setState(SpriteState1.WALKING)
+                        if(instance.controller.getState()==SpriteState1.WALKING ){
+                            if (Random.nextInt(100) < 20) {
+                                instance.controller.setState(SpriteState1.Idle)
+                                delay(Random.nextLong(2000, 3000))
+                                instance.controller.setState(SpriteState1.WALKING)
+                            }
                         }
                         val maxLeftDistance = instance.params.x - (-spriteWidth / 3) - margin  // ✅ Cập nhật
                         if (maxLeftDistance > 180) {
