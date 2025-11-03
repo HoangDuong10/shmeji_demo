@@ -293,13 +293,13 @@ fun ShimejiSprite(
                                 spriteState == SpriteState1.CUSTOM ||
                                 spriteState == SpriteState1.Idle
                             -> 0.dp
-                        spriteFlip == SpriteFlip1.LEFT && spriteState!= SpriteState1.WALKING -> (-33).dp
-                        spriteFlip == SpriteFlip1.RIGHT && spriteState!= SpriteState1.WALKING -> (33).dp
+                        spriteFlip == SpriteFlip1.LEFT && spriteState!= SpriteState1.WALKING -> (0).dp
+                        spriteFlip == SpriteFlip1.RIGHT && spriteState!= SpriteState1.WALKING -> (0).dp
                         else -> 0.dp
                     },
                     y = when {
                         // ⚡ Chỉ khi leo trần mới nâng sprite lên -33dp
-                        spriteFlip == SpriteFlip1.TOP && spriteState == SpriteState1.CLIMB -> (-33).dp
+                        spriteFlip == SpriteFlip1.TOP && spriteState == SpriteState1.CLIMB -> (0).dp
                         else -> 0.dp
                     }
                 )
@@ -330,7 +330,7 @@ fun ShimejiSprite(
                         }
                     }
                 }
-                .background(Color.Red)
+//                .background(Color.Red)
                 ,
             contentScale = ContentScale.FillBounds
 
