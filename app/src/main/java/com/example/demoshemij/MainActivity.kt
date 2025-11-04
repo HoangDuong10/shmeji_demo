@@ -196,20 +196,52 @@ fun MovingSprite(
 fun ShimejiSprite(
     spriteState: SpriteState1,
     spriteFlip: SpriteFlip1?,
-    onCustomAnimationFinished: () -> Unit
+    onCustomAnimationFinished: () -> Unit,
+    onImpactFinish : () -> Unit
 ) {
     var currentFrame by remember { mutableStateOf(0) }
 
-    val idleImages = remember { listOf(R.drawable.idle_1, R.drawable.idle_2) }
-    val touchImages = remember { listOf(R.drawable.hover_1, R.drawable.hover_2, R.drawable.hover_3) }
-    val fallImages = remember { listOf(R.drawable.falling_1, R.drawable.falling_2) }
-    val bottomImages = remember { listOf(R.drawable.impact_2, R.drawable.impact_3, R.drawable.impact_4) }
-    val dashImages = remember { listOf(R.drawable.dash_1, R.drawable.dash_2, R.drawable.dash_3) }
-    val climbImages = remember { listOf(R.drawable.climb_1, R.drawable.climb_2, R.drawable.climb_3) }
-    val customImage = remember { listOf(R.drawable.custom_1, R.drawable.custom_2, R.drawable.custom_3, R.drawable.custom_4, R.drawable.custom_5, R.drawable.custom_6, R.drawable.custom_7) }
-    val walkingImages = remember { listOf(R.drawable.walking_1, R.drawable.walking_2) }
+    val idleImages = remember { listOf(R.drawable.vampire_idle_1, R.drawable.vampire_idle_2) }
+    val touchImages = remember { listOf(R.drawable.vampire_hover_1, R.drawable.vampire_hover_2, R.drawable.vampire_hover_3) }
+    val fallImages = remember { listOf(R.drawable.vampire_falling_1, R.drawable.vampire_falling_2) }
+    val bottomImages = remember { listOf(R.drawable.vampire_impact_1, R.drawable.vampire_impact_2, R.drawable.vampire_impact_3) }
+    val dashImages = remember {
+        listOf(
+            R.drawable.vampire_dash_1,
+            R.drawable.vampire_dash_2,
+            R.drawable.vampire_dash_3,
+            R.drawable.vampire_dash_4,
+            R.drawable.vampire_dash_5,
+            R.drawable.vampire_dash_6,
+            R.drawable.vampire_dash_7,
+            R.drawable.vampire_dash_8,
+        )
+    }
+    val climbImages = remember { listOf(R.drawable.vampire_climb_1, R.drawable.vampire_climb_2, R.drawable.vampire_climb_3) }
+    val customImage = remember {
+        listOf(
+            R.drawable.vampire_custom_1,
+            R.drawable.vampire_custom_2,
+            R.drawable.vampire_custom_3,
+            R.drawable.vampire_custom_4,
+            R.drawable.vampire_custom_5,
+            R.drawable.vampire_custom_6,
+            R.drawable.vampire_custom_7,
+            R.drawable.vampire_custom_8,
+            R.drawable.vampire_custom_9,
+            R.drawable.vampire_custom_10,
+            R.drawable.vampire_custom_11,
+            R.drawable.vampire_custom_12,
+            R.drawable.vampire_custom_13,
+            R.drawable.vampire_custom_14,
+            R.drawable.vampire_custom_15,
+            R.drawable.vampire_custom_16,
+            R.drawable.vampire_custom_17,
+        )
+    }
+    val walkingImages = remember { listOf(R.drawable.vampire_walking_1, R.drawable.vampire_walking_2) }
     var width by  remember { mutableStateOf(0) }
-    val idleDelay = 300L
+    val idleDelay = 1000/3L
     val touchDelay = 250L
     val bottomDelay = 500L
     val fallDelay = 250L
@@ -229,17 +261,17 @@ fun ShimejiSprite(
                 animateFrames(touchImages, touchDelay) { currentFrame = it }
 
             }
-            SpriteState1.Bottom -> animateFrames(bottomImages, bottomDelay) { currentFrame = it }
+            SpriteState1.Bottom -> animateImpact(bottomImages, setFrame = {currentFrame = it}, onFinished = onImpactFinish)
             SpriteState1.FALL -> animateFrames(fallImages, fallDelay) { currentFrame = it }
-            SpriteState1.CLIMB -> animateFrames(climbImages, dashLoopDelay) { currentFrame = it }
-            SpriteState1.DASH -> animateDash(dashImages, dashStartDelay, dashLoopDelay) { currentFrame = it }
+            SpriteState1.CLIMB -> animateFrames(climbImages, 1000/3L) { currentFrame = it }
+            SpriteState1.DASH ->   animateDash1(customImage,setFrame = {currentFrame = it} )
             SpriteState1.CUSTOM -> {
                 width = 300
-                animateCustom(images = customImage, setFrame = {currentFrame = it}, onFinished = {onCustomAnimationFinished()})
+                animateCustom11(customImage,  onFinished = onCustomAnimationFinished,setFrame = {currentFrame = it} )
             }
             SpriteState1.WALKING -> {
                 width = 50
-                animateFrames(walkingImages, fallDelay) { currentFrame = it }
+                animateFrames(walkingImages, idleDelay) { currentFrame = it }
             }
         }
     }
@@ -276,13 +308,14 @@ fun ShimejiSprite(
     val scaleFactor = 0.2f
     val widthDp = with(LocalDensity.current) { (imageBitmap.width * scaleFactor).toDp() }
     Box(
-        modifier = Modifier.size(200.dp*(786/977f)),
-                contentAlignment = Alignment.TopEnd
+        modifier = Modifier.size(120.dp*(1092/1359f)),
+        contentAlignment = Alignment.TopEnd
     ) {
         Image(
             painter = painterResource(id = imageRes),
             contentDescription = null,
             modifier = Modifier
+                .size(120.dp*(1092/1359f))
                 .offset(
                     x = when {
                         spriteFlip == SpriteFlip1.TOP ||
@@ -330,9 +363,9 @@ fun ShimejiSprite(
                         }
                     }
                 }
-//                .background(Color.Red)
-                ,
-            contentScale = ContentScale.FillBounds
+                .background(Color.Red)
+            ,
+            contentScale = ContentScale.Fit
 
         )
     }
@@ -349,6 +382,8 @@ private suspend fun animateFrames(images: List<Int>, frameDelay: Long, setFrame:
         setFrame(current)
     }
 }
+
+
 
 private suspend fun animateDash(
     images: List<Int>,
@@ -388,6 +423,72 @@ private suspend fun animateCustom(
         delay(delayTime)
     }
     onFinished()
+}
+
+private suspend fun animateCustom11(
+    images: List<Int>,
+    setFrame: (Int) -> Unit,
+    onFinished: () -> Unit
+) {
+    val sequence = listOf(0, 1, 2, 3, 4, 5,6,7,8,9,10,11,12,13,14,15,16)
+
+    for (i in sequence.indices) {
+        if (!isActive) return
+        setFrame(sequence[i])
+
+        // Nếu là frame 5 -> 6 (index 6 -> 7) thì delay 1/12s, còn lại 1/6s
+
+        delay(250L)
+    }
+    onFinished()
+}
+
+private suspend fun animateImpact(
+    images: List<Int>,
+    setFrame: (Int) -> Unit,
+    onFinished: () -> Unit
+) {
+    val sequence = listOf(1, 2, 3)
+
+    for (i in sequence.indices) {
+        if (!isActive) return
+
+        setFrame(sequence[i])
+
+        val delayTime = when (i) {
+            0 -> 333L  // 1 -> 2
+            1 -> 250L  // 2 -> 3
+            else -> 250L
+        }
+
+        delay(delayTime)
+    }
+
+    onFinished()
+}
+
+
+private suspend fun animateDash1(
+    images: List<Int>,
+    setFrame: (Int) -> Unit,
+) {
+    // Giai đoạn 1: chạy khởi động (0–5)
+    val startSequence = listOf(0, 1, 2, 3, 4, 5)
+    for (i in startSequence) {
+        if (!isActive) return
+        setFrame(i)
+        delay(1000L / 6) // 1/6s mỗi frame
+    }
+
+    // Giai đoạn 2: lặp vô hạn (2–7)
+    val loopSequence = listOf(2, 3, 4, 5, 6, 7)
+    while (isActive) {
+        for (i in loopSequence) {
+            if (!isActive) return
+            setFrame(i)
+            delay(1000L / 6)
+        }
+    }
 }
 
 
