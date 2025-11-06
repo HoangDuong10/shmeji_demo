@@ -128,47 +128,87 @@ class MainActivity : ComponentActivity() {
         checkOverlayPermission: () -> Boolean
     ) {
         var isServiceRunning by remember { mutableStateOf(false) }
+        var showCharacterSelection by remember { mutableStateOf(false) }
+        val currentCharacter by CharacterRepository.currentCharacter.collectAsState()
 
-        Column(
-            modifier = modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = if (isServiceRunning) "Có sprite đang chạy!" else "Chưa có sprite",
-                modifier = Modifier.padding(16.dp),
-                style = MaterialTheme.typography.headlineSmall
+        if (showCharacterSelection) {
+            CharacterSelectionScreen(
+                onCharacterSelected = { character ->
+                    CharacterRepository.setCurrentCharacter(character)
+                    showCharacterSelection = false
+                },
+                onBackPressed = {
+                    showCharacterSelection = false
+                }
             )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // NÚT THÊM SPRITE
-            Button(
-                onClick = {
-                    if (checkOverlayPermission()) {
-                        onAddSprite()
-                        isServiceRunning = true
-                    }
-                },
-                enabled = true // Luôn bật, vì thêm bao nhiêu cũng được
+        } else {
+            Column(
+                modifier = modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("Thêm Sprite")
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // NÚT TẮT TẤT CẢ
-            Button(
-                onClick = {
-                    onStopAll()
-                    isServiceRunning = false
-                },
-                enabled = isServiceRunning,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.error
+                Text(
+                    text = if (isServiceRunning) "Có sprite đang chạy!" else "Chưa có sprite",
+                    modifier = Modifier.padding(16.dp),
+                    style = MaterialTheme.typography.headlineSmall
                 )
-            ) {
-                Text("Tắt Tất Cả")
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // HIỂN THỊ NHÂN VẬT HIỆN TẠI
+                Text(
+                    text = "Nhân vật hiện tại: ${currentCharacter.name}",
+                    modifier = Modifier.padding(8.dp),
+                    style = MaterialTheme.typography.bodyLarge
+                )
+
+                Image(
+                    painter = painterResource(currentCharacter.previewImage),
+                    contentDescription = currentCharacter.name,
+                    modifier = Modifier.size(80.dp)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // NÚT CHỌN NHÂN VẬT
+                Button(
+                    onClick = {
+                        showCharacterSelection = true
+                    }
+                ) {
+                    Text("Chọn Nhân Vật")
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // NÚT THÊM SPRITE
+                Button(
+                    onClick = {
+                        if (checkOverlayPermission()) {
+                            onAddSprite()
+                            isServiceRunning = true
+                        }
+                    },
+                    enabled = true // Luôn bật, vì thêm bao nhiêu cũng được
+                ) {
+                    Text("Thêm Sprite")
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // NÚT TẮT TẤT CẢ
+                Button(
+                    onClick = {
+                        onStopAll()
+                        isServiceRunning = false
+                    },
+                    enabled = isServiceRunning,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Tắt Tất Cả")
+                }
             }
         }
     }
@@ -200,53 +240,32 @@ fun ShimejiSprite(
     onImpactFinish : () -> Unit
 ) {
     var currentFrame by remember { mutableStateOf(0) }
+    
+    // Lấy dữ liệu nhân vật hiện tại
+    val currentCharacter by CharacterRepository.currentCharacter.collectAsState()
+    val animations = currentCharacter.spriteAnimations
+    val timings = currentCharacter.animationTimings
 
-    val idleImages = remember { listOf(R.drawable.vampire_idle_1, R.drawable.vampire_idle_2) }
-    val touchImages = remember { listOf(R.drawable.vampire_hover_1, R.drawable.vampire_hover_2, R.drawable.vampire_hover_3) }
-    val fallImages = remember { listOf(R.drawable.vampire_falling_1, R.drawable.vampire_falling_2) }
-    val bottomImages = remember { listOf(R.drawable.vampire_impact_1, R.drawable.vampire_impact_2, R.drawable.vampire_impact_3) }
-    val dashImages = remember {
-        listOf(
-            R.drawable.vampire_dash_1,
-            R.drawable.vampire_dash_2,
-            R.drawable.vampire_dash_3,
-            R.drawable.vampire_dash_4,
-            R.drawable.vampire_dash_5,
-            R.drawable.vampire_dash_6,
-            R.drawable.vampire_dash_7,
-            R.drawable.vampire_dash_8,
-        )
+    val idleImages = remember(currentCharacter.id) { animations.idleImages }
+    val touchImages = remember(currentCharacter.id) { animations.touchImages }
+    val fallImages = remember(currentCharacter.id) { animations.fallImages }
+    val bottomImages = remember(currentCharacter.id) { animations.bottomImages }
+    val dashImages = remember(currentCharacter.id) { animations.dashImages }
+    val climbImages = remember(currentCharacter.id) { animations.climbImages }
+    val customImage = remember(currentCharacter.id) { animations.customImages }
     }
-    val climbImages = remember { listOf(R.drawable.vampire_climb_1, R.drawable.vampire_climb_2, R.drawable.vampire_climb_3) }
-    val customImage = remember {
-        listOf(
-            R.drawable.vampire_custom_1,
-            R.drawable.vampire_custom_2,
-            R.drawable.vampire_custom_3,
-            R.drawable.vampire_custom_4,
-            R.drawable.vampire_custom_5,
-            R.drawable.vampire_custom_6,
-            R.drawable.vampire_custom_7,
-            R.drawable.vampire_custom_8,
-            R.drawable.vampire_custom_9,
-            R.drawable.vampire_custom_10,
-            R.drawable.vampire_custom_11,
-            R.drawable.vampire_custom_12,
-            R.drawable.vampire_custom_13,
-            R.drawable.vampire_custom_14,
-            R.drawable.vampire_custom_15,
-            R.drawable.vampire_custom_16,
-            R.drawable.vampire_custom_17,
-        )
-    }
-    val walkingImages = remember { listOf(R.drawable.vampire_walking_1, R.drawable.vampire_walking_2) }
+    val walkingImages = remember(currentCharacter.id) { animations.walkingImages }
     var width by  remember { mutableStateOf(0) }
-    val idleDelay = 1000/3L
-    val touchDelay = 250L
-    val bottomDelay = 500L
-    val fallDelay = 250L
-    val dashStartDelay = 160L
-    val dashLoopDelay = 333L
+    
+    // Sử dụng timing từ character data
+    val idleDelay = timings.idleDelay
+    val touchDelay = timings.touchDelay
+    val bottomDelay = timings.bottomDelay
+    val fallDelay = timings.fallDelay
+    val dashStartDelay = timings.dashStartDelay
+    val dashLoopDelay = timings.dashLoopDelay
+    val climbDelay = timings.climbDelay
+    val customDelay = timings.customDelay
 
     LaunchedEffect(spriteState) {
         currentFrame = 0
@@ -263,7 +282,7 @@ fun ShimejiSprite(
             }
             SpriteState1.Bottom -> animateImpact(bottomImages, setFrame = {currentFrame = it}, onFinished = onImpactFinish)
             SpriteState1.FALL -> animateFrames(fallImages, fallDelay) { currentFrame = it }
-            SpriteState1.CLIMB -> animateFrames(climbImages, 1000/3L) { currentFrame = it }
+            SpriteState1.CLIMB -> animateFrames(climbImages, climbDelay) { currentFrame = it }
             SpriteState1.DASH ->   animateDash1(dashImages,setFrame = {currentFrame = it} )
             SpriteState1.CUSTOM -> {
                 width = 300
