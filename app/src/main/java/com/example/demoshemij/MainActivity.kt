@@ -264,7 +264,7 @@ fun ShimejiSprite(
             SpriteState1.Bottom -> animateImpact(bottomImages, setFrame = {currentFrame = it}, onFinished = onImpactFinish)
             SpriteState1.FALL -> animateFrames(fallImages, fallDelay) { currentFrame = it }
             SpriteState1.CLIMB -> animateFrames(climbImages, 1000/3L) { currentFrame = it }
-            SpriteState1.DASH ->   animateDash1(customImage,setFrame = {currentFrame = it} )
+            SpriteState1.DASH ->   animateDash1(dashImages,setFrame = {currentFrame = it} )
             SpriteState1.CUSTOM -> {
                 width = 300
                 animateCustom11(customImage,  onFinished = onCustomAnimationFinished,setFrame = {currentFrame = it} )
@@ -507,5 +507,19 @@ enum class SpriteFlip1 {
 //    val spriteState = MutableStateFlow(SpriteState1.Idle)
 //}
 //
+
+private suspend fun animateFrames(
+    frames: List<Pair<Int,Long>>,
+    setFrame: (Int) -> Unit = {}
+) {
+    var current = 0
+    while (true) {
+        if (!isActive) return
+        val frame = frames[current]
+        setFrame(frame.first)
+        delay(frame.second)
+        current = (current + 1) % frames.size
+    }
+}
 
 
