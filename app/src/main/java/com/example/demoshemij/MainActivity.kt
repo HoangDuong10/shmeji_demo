@@ -40,6 +40,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -204,11 +205,11 @@ fun ShimejiSprite(
     val touchImages = remember { listOf(R.drawable.hover_1, R.drawable.hover_2, R.drawable.hover_3) }
     val fallImages = remember { listOf(R.drawable.falling_1, R.drawable.falling_2) }
     val bottomImages = remember { listOf(R.drawable.impact_2, R.drawable.impact_3, R.drawable.impact_4) }
-    val dashImages = remember { listOf(R.drawable.dash_1, R.drawable.dash_2, R.drawable.dash_3) }
+    val dashImages = remember { listOf(R.drawable.dash_2, R.drawable.dash_3) }
     val climbImages = remember { listOf(R.drawable.climb_1, R.drawable.climb_2, R.drawable.climb_3) }
     val customImage = remember { listOf(R.drawable.custom_1, R.drawable.custom_2, R.drawable.custom_3, R.drawable.custom_4, R.drawable.custom_5, R.drawable.custom_6, R.drawable.custom_7) }
     val walkingImages = remember { listOf(R.drawable.walking_1, R.drawable.walking_2) }
-    var width by  remember { mutableStateOf(0) }
+    var width by  remember { mutableIntStateOf(0) }
     val idleDelay = 300L
     val touchDelay = 250L
     val bottomDelay = 500L
