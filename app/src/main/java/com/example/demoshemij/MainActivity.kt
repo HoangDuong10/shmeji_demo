@@ -205,7 +205,7 @@ fun ShimejiSprite(
     val touchImages = remember { listOf(R.drawable.hover_1, R.drawable.hover_2, R.drawable.hover_3) }
     val fallImages = remember { listOf(R.drawable.falling_1, R.drawable.falling_2) }
     val bottomImages = remember { listOf(R.drawable.impact_2, R.drawable.impact_3, R.drawable.impact_4) }
-    val dashImages = remember { listOf(R.drawable.dash_2, R.drawable.dash_3) }
+    val dashImages = remember { listOf(R.drawable.dash_1, R.drawable.dash_2, R.drawable.dash_3) }
     val climbImages = remember { listOf(R.drawable.climb_1, R.drawable.climb_2, R.drawable.climb_3) }
     val customImage = remember { listOf(R.drawable.custom_1, R.drawable.custom_2, R.drawable.custom_3, R.drawable.custom_4, R.drawable.custom_5, R.drawable.custom_6, R.drawable.custom_7) }
     val walkingImages = remember { listOf(R.drawable.walking_1, R.drawable.walking_2) }
@@ -234,6 +234,12 @@ fun ShimejiSprite(
             SpriteState1.FALL -> animateFrames(fallImages, fallDelay) { currentFrame = it }
             SpriteState1.CLIMB -> animateFrames(climbImages, dashLoopDelay) { currentFrame = it }
             SpriteState1.DASH -> animateDash(dashImages, dashStartDelay, dashLoopDelay) { currentFrame = it }
+            SpriteState1.DASH_END -> {
+                // Hiển thị dash_1 một lần rồi chuyển sang CLIMB
+                currentFrame = 0 // dash_1
+                delay(dashStartDelay)
+                // Không cần làm gì thêm, FloatingService sẽ chuyển sang CLIMB
+            }
             SpriteState1.CUSTOM -> {
                 width = 300
                 animateCustom(images = customImage, setFrame = {currentFrame = it}, onFinished = {onCustomAnimationFinished()})
@@ -251,6 +257,7 @@ fun ShimejiSprite(
         SpriteState1.Bottom -> bottomImages.getOrNull(currentFrame) ?: bottomImages.first()
         SpriteState1.FALL -> fallImages.getOrNull(currentFrame) ?: fallImages.first()
         SpriteState1.DASH -> dashImages.getOrNull(currentFrame) ?: dashImages.first()
+        SpriteState1.DASH_END -> dashImages.getOrNull(currentFrame) ?: dashImages.first() // sử dụng dash_1
         SpriteState1.CLIMB -> climbImages.getOrNull(currentFrame) ?: climbImages.first()
         SpriteState1.CUSTOM -> customImage.getOrNull(currentFrame) ?: customImage.first()
         SpriteState1.WALKING -> walkingImages.getOrNull(currentFrame) ?: walkingImages.first()
@@ -358,18 +365,13 @@ private suspend fun animateDash(
     dashLoopDelay: Long,
     setFrame: (Int) -> Unit
 ) {
-    // Bước 1: dash_1 → dash_2 (chạy 1 lần)
-    setFrame(0)
-    delay(dashStartDelay)
-    setFrame(1)
-
-    // Bước 2: lặp 2 ↔ 3 vô hạn
-    var current = 1
+    // Lặp dash_2 ↔ dash_3 vô hạn (không có dash_1)
+    var current = 1 // bắt đầu từ dash_2 (index 1)
     while (true) {
         if (!isActive) return
-        delay(dashLoopDelay)
-        current = if (current == 1) 2 else 1
         setFrame(current)
+        delay(dashLoopDelay)
+        current = if (current == 1) 2 else 1 // lặp giữa dash_2 (index 1) và dash_3 (index 2)
     }
 }
 
@@ -396,7 +398,7 @@ private suspend fun animateCustom(
 
 // 🧩 Enum mô tả trạng thái Shimeji
 enum class SpriteState1 {
-    Idle, Touch, Bottom,FALL,DASH,CLIMB,CUSTOM,WALKING
+    Idle, Touch, Bottom,FALL,DASH,DASH_END,CLIMB,CUSTOM,WALKING
 }
 
 // 🧭 Enum mô tả hướng lật

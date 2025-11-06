@@ -378,7 +378,17 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
             val isAtRight = params.x >= rightEdge
 
             when {
-                isAtLeft || isAtRight -> instance.controller.setState(SpriteState1.CLIMB)
+                isAtLeft || isAtRight -> {
+                    // Nếu đang DASH, chuyển sang DASH_END trước, rồi mới CLIMB
+                    if (instance.controller.getState() == SpriteState1.DASH) {
+                        instance.controller.setState(SpriteState1.DASH_END)
+                        // Đợi DASH_END hoàn thành rồi chuyển sang CLIMB
+                        delay(160L) // dashStartDelay
+                        instance.controller.setState(SpriteState1.CLIMB)
+                    } else if (instance.controller.getState() != SpriteState1.CLIMB) {
+                        instance.controller.setState(SpriteState1.CLIMB)
+                    }
+                }
                 isAtBottom -> instance.controller.setState(SpriteState1.WALKING)
             }
 
@@ -386,11 +396,11 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                 params.y <= topEdge -> SpriteFlip1.TOP
                 params.x <= leftEdge ||
                         axis == "x" && (target < start && instance.controller.getState() == SpriteState1.WALKING) ||
-                        (target > start && instance.controller.getState() == SpriteState1.DASH) -> SpriteFlip1.LEFT
+                        (target > start && (instance.controller.getState() == SpriteState1.DASH || instance.controller.getState() == SpriteState1.DASH_END)) -> SpriteFlip1.LEFT
 
                 params.x >= rightEdge ||
                         axis == "x" && (target > start && instance.controller.getState() == SpriteState1.WALKING) ||
-                        (target < start && instance.controller.getState() == SpriteState1.DASH) -> SpriteFlip1.RIGHT
+                        (target < start && (instance.controller.getState() == SpriteState1.DASH || instance.controller.getState() == SpriteState1.DASH_END)) -> SpriteFlip1.RIGHT
 
                 else -> if (isMovingRight) null else SpriteFlip1.RIGHT
             }
