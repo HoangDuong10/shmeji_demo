@@ -236,13 +236,14 @@ fun MovingSprite(
 fun ShimejiSprite(
     spriteState: SpriteState1,
     spriteFlip: SpriteFlip1?,
+    characterData: CharacterData? = null, // ✅ Thêm tham số nhân vật (optional để tương thích)
     onCustomAnimationFinished: () -> Unit,
     onImpactFinish : () -> Unit
 ) {
     var currentFrame by remember { mutableStateOf(0) }
     
-    // Lấy dữ liệu nhân vật hiện tại
-    val currentCharacter by CharacterRepository.currentCharacter.collectAsState()
+    // ✅ Sử dụng nhân vật được truyền vào, hoặc lấy từ repository nếu không có
+    val currentCharacter = characterData ?: CharacterRepository.getCurrentCharacter()
     val animations = currentCharacter.spriteAnimations
     val timings = currentCharacter.animationTimings
 
@@ -253,7 +254,7 @@ fun ShimejiSprite(
     val dashImages = remember(currentCharacter.id) { animations.dashImages }
     val climbImages = remember(currentCharacter.id) { animations.climbImages }
     val customImage = remember(currentCharacter.id) { animations.customImages }
-    }
+
     val walkingImages = remember(currentCharacter.id) { animations.walkingImages }
     var width by  remember { mutableStateOf(0) }
     

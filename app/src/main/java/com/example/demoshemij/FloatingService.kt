@@ -43,6 +43,7 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
         val view: ComposeView,
         val params: WindowManager.LayoutParams,
         val controller: SpriteController,
+        val characterData: CharacterData, // ✅ Thêm thông tin nhân vật riêng cho mỗi sprite
         var isDragging: Boolean = false,
         var initialTouchX: Float = 0f,
         var initialTouchY: Float = 0f,
@@ -115,6 +116,8 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
     private fun addNewSprite() {
         val (screenWidth, screenHeight) = getScreenSize(this@FloatingSpriteService)
         val controller = SpriteController()
+        // ✅ Lấy nhân vật hiện tại được chọn khi tạo sprite
+        val selectedCharacter = CharacterRepository.getCurrentCharacter()
         var instance: SpriteInstance? = null
 
         val newView = ComposeView(this).apply {
@@ -129,6 +132,7 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                 SpriteContent(
                     spriteState = spriteState,
                     spriteFlip = spriteFlip,
+                    characterData = selectedCharacter, // ✅ Truyền nhân vật vào SpriteContent
                     onCustomAnimationFinished = {
                         instance?.controller?.setState(SpriteState1.WALKING)
                         instance?.let { resumeSpriteAnimation(it) }
@@ -161,7 +165,8 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
         instance = SpriteInstance(
             view = newView,
             params = params,
-            controller = controller
+            controller = controller,
+            characterData = selectedCharacter // ✅ Lưu nhân vật cho sprite này
         )
 
         startSpriteAnimation(instance)
@@ -301,6 +306,7 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
     fun SpriteContent(
         spriteState: SpriteState1,
         spriteFlip: SpriteFlip1?,
+        characterData: CharacterData, // ✅ Thêm tham số nhân vật
         onCustomAnimationFinished: () -> Unit,
         isInitial : Boolean,
         instance : SpriteInstance? = null
@@ -308,6 +314,7 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
         ShimejiSprite(
             spriteState = spriteState,
             spriteFlip = spriteFlip,
+            characterData = characterData, // ✅ Truyền nhân vật vào ShimejiSprite
             onCustomAnimationFinished = { onCustomAnimationFinished() },
             onImpactFinish = {
                 instance?.moveJob?.cancel()

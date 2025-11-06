@@ -1,6 +1,9 @@
 package com.example.demoshemij
 
 import androidx.annotation.DrawableRes
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 // Data class cho mỗi nhân vật
 data class CharacterData(
@@ -36,9 +39,6 @@ data class AnimationTimings(
     val customDelay: Long = 200L
 )
 
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 
 // Repository chứa tất cả nhân vật
 object CharacterRepository {
@@ -85,14 +85,14 @@ object CharacterRepository {
     private val shimejiCharacter = CharacterData(
         id = "shimeji",
         name = "Shimeji",
-        previewImage = R.drawable.idle_1,
+        previewImage = R.drawable.idle_2,
         spriteAnimations = SpriteAnimations(
-            idleImages = listOf(R.drawable.idle_1, R.drawable.idle_2),
+            idleImages = listOf(R.drawable.idle_2, R.drawable.idle_2),
             walkingImages = listOf(R.drawable.walking_1, R.drawable.walking_2),
             touchImages = listOf(R.drawable.anh1, R.drawable.anh2, R.drawable.anh3, R.drawable.anh4),
             fallImages = listOf(R.drawable.falling_1, R.drawable.falling_2),
-            bottomImages = listOf(R.drawable.impact_2, R.drawable.impact_3, R.drawable.impact_4),
-            dashImages = listOf(R.drawable.dash_1, R.drawable.dash_2, R.drawable.dash_3),
+            bottomImages = listOf(R.drawable.impact_2, R.drawable.impact_2, R.drawable.impact_4),
+            dashImages = listOf(R.drawable.dash_1, R.drawable.dash_2, R.drawable.dash_2),
             climbImages = listOf(R.drawable.climb_1, R.drawable.climb_2, R.drawable.climb_3),
             customImages = listOf(
                 R.drawable.custom_1, R.drawable.custom_2, R.drawable.custom_3,

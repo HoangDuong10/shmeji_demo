@@ -27,7 +27,7 @@ fun CharacterSelectionScreen(
     onCharacterSelected: (CharacterData) -> Unit,
     onBackPressed: () -> Unit
 ) {
-    var selectedCharacter by remember { mutableStateOf(CharacterRepository.currentCharacter) }
+    var selectedCharacter by remember { mutableStateOf(CharacterRepository.getCurrentCharacter()) }
     
     Scaffold(
         topBar = {
