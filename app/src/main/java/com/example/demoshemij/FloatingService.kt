@@ -1,5 +1,6 @@
 package com.example.demoshemij
 
+import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -112,6 +113,7 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
         startForeground(1, notification)
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     private fun addNewSprite() {
         val (screenWidth, screenHeight) = getScreenSize(this@FloatingSpriteService)
         val controller = SpriteController()
@@ -305,7 +307,8 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
         isInitial : Boolean,
         instance : SpriteInstance? = null
     ) {
-        ShimejiSprite(
+        // ✅ SỬ DỤNG COMPONENT MỚI TỪ JSON
+        com.example.demoshemij.component.JsonAnimatedSprite(
             spriteState = spriteState,
             spriteFlip = spriteFlip,
             onCustomAnimationFinished = { onCustomAnimationFinished() },
@@ -320,7 +323,8 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                         }
                     }
                 }
-            }
+            },
+            characterName = "goku"
         )
     }
 

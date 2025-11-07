@@ -1,0 +1,235 @@
+{
+    "characters": [
+        {
+            "goku": {
+                "folder": "goku",
+                "thumbnail": "goku.png",
+                "animations": {
+                    "idle": {
+                        "thumb": "idle.png",
+                        "frames": [
+                            {
+                                "id": 1,
+                                "url": "idle1.png"
+                            },
+                            {
+                                "id": 2,
+                                "url": "idle2.png"
+                            }
+                        ],
+                        "logic": [
+                            {
+                                "frame": [
+                                    1,
+                                    2
+                                ],
+                                "delay": 333,
+                                "sequence": "infinity"
+                            }
+                        ]
+                    },
+                    "hover": {
+                        "thumb": "hover.png",
+                        "frames": [
+                            {
+                                "id": 1,
+                                "url": "hover1.png"
+                            },
+                            {
+                                "id": 2,
+                                "url": "hover2.png"
+                            },
+                            {
+                                "id": 3,
+                                "url": "hover3.png"
+                            }
+                        ],
+                        "logic": [
+                            {
+                                "frame": [
+                                    1,
+                                    2,
+                                    3,
+                                    2
+                                ],
+                                "delay": 250,
+                                "sequence": "infinity"
+                            }
+                        ]
+                    },
+                    "walking": {
+                        "thumb": "walking.png",
+                        "frames": [
+                            {
+                                "id": 1,
+                                "url": "walking1.png"
+                            },
+                            {
+                                "id": 2,
+                                "url": "walking2.png"
+                            }
+                        ],
+                        "logic": [
+                            {
+                                "frame": [
+                                    1,
+                                    2
+                                ],
+                                "delay": 333,
+                                "sequence": "infinity"
+                            }
+                        ]
+                    },
+                    "falling": {
+                        "thumb": "falling.png",
+                        "frames": [
+                            {
+                                "id": 1,
+                                "url": "falling1.png"
+                            },
+                            {
+                                "id": 2,
+                                "url": "falling2.png"
+                            }
+                        ],
+                        "logic": [
+                            {
+                                "frame": [
+                                    1,
+                                    2
+                                ],
+                                "delay": 250,
+                                "sequence": "infinity"
+                            }
+                        ]
+                    },
+                    "climb": {
+                        "thumb": "climb.png",
+                        "frames": [
+                            {
+                                "id": 1,
+                                "url": "climb1.png"
+                            },
+                            {
+                                "id": 2,
+                                "url": "climb2.png"
+                            },
+                            {
+                                "id": 3,
+                                "url": "climb3.png"
+                            }
+                        ],
+                        "logic": [
+                            {
+                                "frame": [
+                                    1,
+                                    2,
+                                    3,
+                                    2
+                                ],
+                                "delay": 333,
+                                "sequence": "infinity"
+                            }
+                        ]
+                    },
+                    "dash": {
+                        "thumb": "dash.png",
+                        "frames": [
+                            {
+                                "id": 1,
+                                "url": "dash1.png"
+                            },
+                            {
+                                "id": 2,
+                                "url": "dash2.png"
+                            },
+                            {
+                                "id": 3,
+                                "url": "dash3.png"
+                            }
+                        ],
+                        "logic": [
+                            {
+                                "frame": [
+                                    1
+                                ],
+                                "delay": 167,
+                                "sequence": 1
+                            },
+                            {
+                                "frame": [
+                                    2,
+                                    3
+                                ],
+                                "delay": 333,
+                                "sequence": "infinity"
+                            }
+                        ]
+                    },
+                    "custom": {
+                        "thumb": "custom.png",
+                        "frames": [
+                            {
+                                "id": 1,
+                                "url": "custom1.png"
+                            },
+                            {
+                                "id": 2,
+                                "url": "custom2.png"
+                            },
+                            {
+                                "id": 3,
+                                "url": "custom3.png"
+                            },
+                            {
+                                "id": 4,
+                                "url": "custom4.png"
+                            },
+                            {
+                                "id": 5,
+                                "url": "custom5.png"
+                            },
+                            {
+                                "id": 6,
+                                "url": "custom6.png"
+                            },
+                            {
+                                "id": 7,
+                                "url": "custom7.png"
+                            }
+                        ],
+                        "logic": [
+                            {
+                                "frame": [
+                                    1,
+                                    2,
+                                    3,
+                                    4,
+                                    3,
+                                    4
+                                ],
+                                "delay": 167,
+                                "sequence": 1
+                            },
+                            {
+                                "frame": [
+                                    5
+                                ],
+                                "delay": 83,
+                                "sequence": 1
+                            },
+                            {
+                                "frame": [
+                                    6,
+                                    7
+                                ],
+                                "delay": 167,
+                                "sequence": "infinity"
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    ]
+}

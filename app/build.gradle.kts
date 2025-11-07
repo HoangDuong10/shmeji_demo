@@ -61,6 +61,9 @@ dependencies {
     implementation(libs.androidx.lifecycle.service)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation("io.coil-kt:coil-compose:2.7.0")
+    implementation("com.google.code.gson:gson:2.10.1")
+
 
 
 
