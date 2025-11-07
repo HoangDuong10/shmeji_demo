@@ -350,7 +350,7 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                     }
                 }
             },
-            characterName = "goku"
+            characterName = "vampire"
         )
     }
 
