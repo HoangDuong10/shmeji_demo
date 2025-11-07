@@ -1,0 +1,308 @@
+{
+    "characters": [
+        {
+            "goku": {
+                "folder": "goku",
+                "thumbnail": "goku.png",
+                "animations": {
+                    "idle": {
+                        "thumb": "idle.png",
+                        "frames": [
+                            {
+                                "id": 1,
+                                "url": "vampire_idle_1"
+                            },
+                            {
+                                "id": 2,
+                                "url": "vampire_idle_2"
+                            }
+                        ],
+                        "logic": [
+                            {
+                                "frame": [
+                                    1,
+                                    2
+                                ],
+                                "delay": 333,
+                                "sequence": "infinity"
+                            }
+                        ]
+                    },
+                    "hover": {
+                        "thumb": "hover.png",
+                        "frames": [
+                            {
+                                "id": 1,
+                                "url": "vampire_hover_1"
+                            },
+                            {
+                                "id": 2,
+                                "url": "vampire_hover_2"
+                            },
+                            {
+                                "id": 3,
+                                "url": "vampire_hover_3"
+                            }
+                        ],
+                        "logic": [
+                            {
+                                "frame": [
+                                    1,
+                                    2,
+                                    3,
+                                    2
+                                ],
+                                "delay": 250,
+                                "sequence": "infinity"
+                            }
+                        ]
+                    },
+                    "walking": {
+                        "thumb": "walking.png",
+                        "frames": [
+                            {
+                                "id": 1,
+                                "url": "vampire_walking_1"
+                            },
+                            {
+                                "id": 2,
+                                "url": "vampire_walking_2"
+                            }
+                        ],
+                        "logic": [
+                            {
+                                "frame": [
+                                    1,
+                                    2
+                                ],
+                                "delay": 333,
+                                "sequence": "infinity"
+                            }
+                        ]
+                    },
+                    "falling": {
+                        "thumb": "falling.png",
+                        "frames": [
+                            {
+                                "id": 1,
+                                "url": "vampire_falling_1"
+                            },
+                            {
+                                "id": 2,
+                                "url": "vampire_falling_2"
+                            }
+                        ],
+                        "logic": [
+                            {
+                                "frame": [
+                                    1,
+                                    2
+                                ],
+                                "delay": 250,
+                                "sequence": "infinity"
+                            }
+                        ]
+                    },
+                    "climb": {
+                        "thumb": "climb.png",
+                        "frames": [
+                            {
+                                "id": 1,
+                                "url": "vampire_climb_1"
+                            },
+                            {
+                                "id": 2,
+                                "url": "vampire_climb_2"
+                            },
+                            {
+                                "id": 3,
+                                "url": "vampire_climb_3"
+                            }
+                        ],
+                        "logic": [
+                            {
+                                "frame": [
+                                    1,
+                                    2,
+                                    3,
+                                    2
+                                ],
+                                "delay": 333,
+                                "sequence": "infinity"
+                            }
+                        ]
+                    },
+                    "dash": {
+                        "thumb": "dash.png",
+                        "frames": [
+                            {
+                                "id": 1,
+                                "url": "vampire_dash_1"
+                            },
+                            {
+                                "id": 2,
+                                "url": "vampire_dash_2"
+                            },
+                            {
+                                "id": 3,
+                                "url": "vampire_dash_3"
+                            },
+                            {
+                                "id": 4,
+                                "url": "vampire_dash_4"
+                            },
+                            {
+                                "id": 5,
+                                "url": "vampire_dash_5"
+                            },
+                            {
+                                "id": 6,
+                                "url": "vampire_dash_6"
+                            },
+                            {
+                                "id": 7,
+                                "url": "vampire_dash_7"
+                            },
+                            {
+                                "id": 8,
+                                "url": "vampire_dash_8"
+                            }
+                        ],
+                        "logic": [
+                            {
+                                "frame": [1, 2, 3, 4, 5, 6],
+                                "delay": 167,
+                                "sequence": 1
+                            },
+                            {
+                                "frame": [3, 4, 5, 6, 7, 8],
+                                "delay": 167,
+                                "sequence": "infinity"
+                            }
+                        ]
+                    },
+                    "impact": {
+                        "thumb": "impact.png",
+                        "frames": [
+                            {
+                                "id": 1,
+                                "url": "vampire_impact_1"
+                            },
+                            {
+                                "id": 2,
+                                "url": "vampire_impact_2"
+                            },
+                            {
+                                "id": 3,
+                                "url": "vampire_impact_3"
+                            }
+                        ],
+                        "logic": [
+                            {
+                                "frame": [
+                                    1
+                                ],
+                                "delay": 167,
+                                "sequence": 1
+                            },
+                            {
+                                "frame": [
+                                    2
+                                ],
+                                "delay": 333,
+                                "sequence": 1
+                            },
+                            {
+                                "frame": [
+                                    3
+                                ],
+                                "delay": 250,
+                                "sequence": 1
+                            }
+                        ]
+                    },
+                    "custom": {
+                        "thumb": "custom.png",
+                        "frames": [
+                            {
+                                "id": 1,
+                                "url": "vampire_custom_1"
+                            },
+                            {
+                                "id": 2,
+                                "url": "vampire_custom_2"
+                            },
+                            {
+                                "id": 3,
+                                "url": "vampire_custom_3"
+                            },
+                            {
+                                "id": 4,
+                                "url": "vampire_custom_4"
+                            },
+                            {
+                                "id": 5,
+                                "url": "vampire_custom_5"
+                            },
+                            {
+                                "id": 6,
+                                "url": "vampire_custom_6"
+                            },
+                            {
+                                "id": 7,
+                                "url": "vampire_custom_7"
+                            },
+                            {
+                                "id": 8,
+                                "url": "vampire_custom_8"
+                            },
+                            {
+                                "id": 9,
+                                "url": "vampire_custom_9"
+                            },
+                            {
+                                "id": 10,
+                                "url": "vampire_custom_10"
+                            },
+                            {
+                                "id": 11,
+                                "url": "vampire_custom_11"
+                            },
+                            {
+                                "id": 12,
+                                "url": "vampire_custom_12"
+                            },
+                            {
+                                "id": 13,
+                                "url": "vampire_custom_13"
+                            },
+                            {
+                                "id": 14,
+                                "url": "vampire_custom_14"
+                            },
+                            {
+                                "id": 15,
+                                "url": "vampire_custom_15"
+                            },
+                            {
+                                "id": 16,
+                                "url": "vampire_custom_16"
+                            },
+                            {
+                                "id": 17,
+                                "url": "vampire_custom_17"
+                            }
+                        ],
+                        "logic": [
+                            {
+                                "frame": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
+                                "delay": 250,
+                                "sequence": 1
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    ]
+}

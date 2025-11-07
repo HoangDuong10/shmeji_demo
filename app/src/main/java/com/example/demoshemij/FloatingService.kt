@@ -64,6 +64,9 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
         savedStateRegistryController.performRestore(null)
         startForegroundService()
+        
+        // Debug: Check drawables
+        com.example.demoshemij.util.DrawableChecker.checkAllDrawables(this)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
