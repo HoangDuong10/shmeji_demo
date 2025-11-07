@@ -21,7 +21,7 @@ object AnimationMapper {
             SpriteState1.CLIMB -> "climb"
             SpriteState1.DASH -> "dash"
             SpriteState1.CUSTOM -> "custom"
-            SpriteState1.Bottom -> "falling"
+            SpriteState1.Bottom -> "impact"  // ✅ SỬA: Bottom = IMPACT animation
         }
     }
     

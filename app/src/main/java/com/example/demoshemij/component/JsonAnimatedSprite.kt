@@ -95,8 +95,46 @@ fun JsonAnimatedSprite(
     // Xử lý impact finish cho Bottom
     LaunchedEffect(spriteState) {
         if (spriteState == SpriteState1.Bottom) {
-            // Tính thời gian cho falling animation
-//            delay(1000) // Ước lượng thời gian rơi + impact
+            Log.d("JsonAnimatedSprite", "State changed to Bottom, calculating impact duration...")
+            
+            // ✅ Tính tổng thời gian animation impact
+            val characterData = JsonLoader.loadCharacterData(context)
+            val animationData = characterData?.characters?.firstOrNull()
+                ?.get(characterName)?.animations?.get("impact")
+            
+            Log.d("JsonAnimatedSprite", "Animation data for 'impact': $animationData")
+            
+            var totalDuration = 0L
+            animationData?.logic?.forEach { logicStep ->
+                val frames = logicStep.frame.size
+                val delayTime = logicStep.delay.toLong()
+                val sequence = when (val seq = logicStep.sequence) {
+                    is String -> if (seq == "infinity") Int.MAX_VALUE else 1
+                    is Int -> seq
+                    is Double -> seq.toInt()
+                    else -> 1
+                }
+                
+                if (sequence != Int.MAX_VALUE) {
+                    totalDuration += frames * delayTime * sequence
+                }
+                
+                Log.d("JsonAnimatedSprite", "Logic step: frames=$frames, delay=$delayTime, sequence=$sequence, subtotal=${frames * delayTime * sequence}ms")
+            }
+            
+            Log.d("JsonAnimatedSprite", "Total impact duration calculated: ${totalDuration}ms")
+            
+            // ✅ Đợi animation impact chạy xong rồi mới gọi callback
+            if (totalDuration > 0) {
+                Log.d("JsonAnimatedSprite", "Waiting for impact animation: ${totalDuration}ms")
+                delay(totalDuration)
+            } else {
+                // Fallback nếu không tính được thời gian
+                Log.w("JsonAnimatedSprite", "Could not calculate impact duration, using fallback 500ms")
+                delay(500)
+            }
+            
+            Log.d("JsonAnimatedSprite", "Impact animation finished, calling onImpactFinish()")
             onImpactFinish()
         }
     }

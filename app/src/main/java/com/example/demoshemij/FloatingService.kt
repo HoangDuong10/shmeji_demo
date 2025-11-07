@@ -44,12 +44,14 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
         val view: ComposeView,
         val params: WindowManager.LayoutParams,
         val controller: SpriteController,
+        val characterData: CharacterData, // ✅ Thêm thông tin nhân vật
         var isDragging: Boolean = false,
         var initialTouchX: Float = 0f,
         var initialTouchY: Float = 0f,
         var initialX: Int = 0,
         var initialY: Int = 0,
-        var moveJob: Job? = null  // ✅ Job để quản lý animation
+        var moveJob: Job? = null,  // ✅ Job để quản lý animation
+        var hasPlayedCustom: Boolean = false  // ✅ Track xem đã chạy CUSTOM lần đầu chưa
     )
 
     private val spriteList = mutableListOf<SpriteInstance>()
@@ -120,6 +122,8 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
     private fun addNewSprite() {
         val (screenWidth, screenHeight) = getScreenSize(this@FloatingSpriteService)
         val controller = SpriteController()
+        // ✅ Lấy nhân vật hiện tại được chọn khi tạo sprite
+        val selectedCharacter = CharacterRepository.getCurrentCharacter()
         var instance: SpriteInstance? = null
 
         val newView = ComposeView(this).apply {
@@ -134,7 +138,10 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                 SpriteContent(
                     spriteState = spriteState,
                     spriteFlip = spriteFlip,
+                    characterData = selectedCharacter,
                     onCustomAnimationFinished = {
+                        // ✅ Khi CUSTOM xong → WALKING
+                        Log.d("FloatingService", "onCustomAnimationFinished called!")
                         instance?.controller?.setState(SpriteState1.WALKING)
                         instance?.let { resumeSpriteAnimation(it) }
                     },
@@ -166,7 +173,8 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
         instance = SpriteInstance(
             view = newView,
             params = params,
-            controller = controller
+            controller = controller,
+            characterData = selectedCharacter // ✅ Lưu nhân vật cho sprite này
         )
 
         startSpriteAnimation(instance)
@@ -306,6 +314,7 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
     fun SpriteContent(
         spriteState: SpriteState1,
         spriteFlip: SpriteFlip1?,
+        characterData: CharacterData,
         onCustomAnimationFinished: () -> Unit,
         isInitial : Boolean,
         instance : SpriteInstance? = null
@@ -314,14 +323,28 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
         com.example.demoshemij.component.JsonAnimatedSprite(
             spriteState = spriteState,
             spriteFlip = spriteFlip,
-            onCustomAnimationFinished = { onCustomAnimationFinished() },
+            onCustomAnimationFinished = { 
+                // ✅ Khi CUSTOM xong → WALKING
+                onCustomAnimationFinished() 
+            },
             onImpactFinish = {
+                // ✅ Khi IMPACT xong
+                val shouldPlayCustom = instance?.hasPlayedCustom == false
+                Log.d("FloatingService", "onImpactFinish called! hasPlayedCustom=${instance?.hasPlayedCustom}, shouldPlayCustom=$shouldPlayCustom")
+                
                 instance?.moveJob?.cancel()
                 instance?.moveJob = lifecycleScope.launch {
-                    if (isInitial) {
+                    if (shouldPlayCustom) {
+                        // ✅ Lần đầu tiên: IMPACT → CUSTOM
+                        Log.d("FloatingService", "First time - Setting state to CUSTOM")
+                        instance?.hasPlayedCustom = true  // Đánh dấu đã chạy CUSTOM
                         instance?.controller?.setState(SpriteState1.CUSTOM)
                     } else {
-                        if (instance?.isDragging == true) {
+                        // ✅ Các lần sau: IMPACT → WALKING → di chuyển
+                        Log.d("FloatingService", "Not first time - Setting state to WALKING")
+                        instance?.controller?.setState(SpriteState1.WALKING)
+                        delay(100) // Đợi animation WALKING bắt đầu
+                        if (instance?.isDragging == false) {
                             animateSpriteWindow(instance)
                         }
                     }
@@ -636,7 +659,9 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
 
                     if (!isActive || instance.isDragging) return@launch
 
+                    Log.d("FloatingService", "Setting state to IMPACT (Bottom), isInitial=$isInitial")
                     instance.controller.setState(SpriteState1.Bottom)
+                    Log.d("FloatingService", "State set to Bottom, waiting for onImpactFinish callback...")
 //                    if(isInitial){
 //                        instance.controller.setState(SpriteState1.CUSTOM)
 //                    }else{
