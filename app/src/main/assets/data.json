@@ -10,11 +10,11 @@
                 "frames": [
                   {
                     "id": 1,
-                    "url": "idle1.png"
+                    "url": "idle_1"
                   },
                   {
                     "id": 2,
-                    "url": "idle2.png"
+                    "url": "idle_2"
                   }
                 ],
                 "logic": [
@@ -33,15 +33,15 @@
                 "frames": [
                   {
                     "id": 1,
-                    "url": "hover1.png"
+                    "url": "hover_1"
                   },
                   {
                     "id": 2,
-                    "url": "hover2.png"
+                    "url": "hover_2"
                   },
                   {
                     "id": 3,
-                    "url": "hover3.png"
+                    "url": "hover_3"
                   }
                 ],
                 "logic": [
@@ -62,11 +62,11 @@
                 "frames": [
                   {
                     "id": 1,
-                    "url": "walking1.png"
+                    "url": "walking_1"
                   },
                   {
                     "id": 2,
-                    "url": "walking2.png"
+                    "url": "walking_2"
                   }
                 ],
                 "logic": [
@@ -85,11 +85,11 @@
                 "frames": [
                   {
                     "id": 1,
-                    "url": "falling1.png"
+                    "url": "falling_1"
                   },
                   {
                     "id": 2,
-                    "url": "falling2.png"
+                    "url": "falling_2"
                   }
                 ],
                 "logic": [
@@ -108,15 +108,15 @@
                 "frames": [
                   {
                     "id": 1,
-                    "url": "climb1.png"
+                    "url": "climb_1"
                   },
                   {
                     "id": 2,
-                    "url": "climb2.png"
+                    "url": "climb_2"
                   },
                   {
                     "id": 3,
-                    "url": "climb3.png"
+                    "url": "climb_3"
                   }
                 ],
                 "logic": [
@@ -137,15 +137,15 @@
                 "frames": [
                   {
                     "id": 1,
-                    "url": "impact2.png"
+                    "url": "impact_2"
                   },
                   {
                     "id": 2,
-                    "url": "impact3.png"
+                    "url": "impact_3"
                   },
                   {
                     "id": 3,
-                    "url": "impact4.png"
+                    "url": "impact_4"
                   }
                 ],
                 "logic": [
@@ -165,15 +165,15 @@
                 "frames": [
                   {
                     "id": 1,
-                    "url": "dash1.png"
+                    "url": "dash_1"
                   },
                   {
                     "id": 2,
-                    "url": "dash2.png"
+                    "url": "dash_2"
                   },
                   {
                     "id": 3,
-                    "url": "dash3.png"
+                    "url": "dash_3"
                   }
                 ],
                 "logic": [
@@ -199,31 +199,31 @@
                 "frames": [
                   {
                     "id": 1,
-                    "url": "custom1.png"
+                    "url": "custom_1"
                   },
                   {
                     "id": 2,
-                    "url": "custom2.png"
+                    "url": "custom_2"
                   },
                   {
                     "id": 3,
-                    "url": "custom3.png"
+                    "url": "custom_3"
                   },
                   {
                     "id": 4,
-                    "url": "custom4.png"
+                    "url": "custom_4"
                   },
                   {
                     "id": 5,
-                    "url": "custom5.png"
+                    "url": "custom_5"
                   },
                   {
                     "id": 6,
-                    "url": "custom6.png"
+                    "url": "custom_6"
                   },
                   {
                     "id": 7,
-                    "url": "custom7.png"
+                    "url": "custom_7"
                   }
                 ],
                 "logic": [
