@@ -22,9 +22,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -32,6 +34,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -127,7 +130,8 @@ class MainActivity : ComponentActivity() {
         onStopAll: () -> Unit,
         checkOverlayPermission: () -> Boolean
     ) {
-        var isServiceRunning by remember { mutableStateOf(false) }
+        var isGokuRunning by remember { mutableStateOf(false) }
+        var isVampireRunning by remember { mutableStateOf(false) }
 
         Column(
             modifier = modifier.fillMaxSize(),
@@ -135,35 +139,137 @@ class MainActivity : ComponentActivity() {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = if (isServiceRunning) "Có sprite đang chạy!" else "Chưa có sprite",
+                text = "Quản lý nhân vật",
                 modifier = Modifier.padding(16.dp),
-                style = MaterialTheme.typography.headlineSmall
+                style = MaterialTheme.typography.headlineMedium
             )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // ===== GOKU =====
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 32.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "🐵 Son Goku",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = if (isGokuRunning) "Đang chạy" else "Đã tắt",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (isGokuRunning) Color(0xFF4CAF50) else Color.Gray
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Row (
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = {
+                                if (checkOverlayPermission()) {
+                                    startFloatingService("START_GOKU")
+                                    isGokuRunning = true
+                                }
+                            },
+                            enabled = !isGokuRunning,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF4CAF50)
+                            )
+                        ) {
+                            Text("Bật Goku")
+                        }
+                        
+                        Button(
+                            onClick = {
+                                startFloatingService("STOP_GOKU")
+                                isGokuRunning = false
+                            },
+                            enabled = isGokuRunning,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error
+                            )
+                        ) {
+                            Text("Tắt Goku")
+                        }
+                    }
+                }
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // NÚT THÊM SPRITE
-            Button(
-                onClick = {
-                    if (checkOverlayPermission()) {
-                        onAddSprite()
-                        isServiceRunning = true
-                    }
-                },
-                enabled = true // Luôn bật, vì thêm bao nhiêu cũng được
+            // ===== VAMPIRE =====
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 32.dp)
             ) {
-                Text("Thêm Sprite")
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "🧛 Vampire",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = if (isVampireRunning) "Đang chạy" else "Đã tắt",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (isVampireRunning) Color(0xFF4CAF50) else Color.Gray
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = {
+                                if (checkOverlayPermission()) {
+                                    startFloatingService("START_VAMPIRE")
+                                    isVampireRunning = true
+                                }
+                            },
+                            enabled = !isVampireRunning,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF9C27B0)
+                            )
+                        ) {
+                            Text("Bật Vampire")
+                        }
+                        
+                        Button(
+                            onClick = {
+                                startFloatingService("STOP_VAMPIRE")
+                                isVampireRunning = false
+                            },
+                            enabled = isVampireRunning,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error
+                            )
+                        ) {
+                            Text("Tắt Vampire")
+                        }
+                    }
+                }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             // NÚT TẮT TẤT CẢ
             Button(
                 onClick = {
                     onStopAll()
-                    isServiceRunning = false
+                    isGokuRunning = false
+                    isVampireRunning = false
                 },
-                enabled = isServiceRunning,
+                enabled = isGokuRunning || isVampireRunning,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.error
                 )

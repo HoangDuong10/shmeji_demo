@@ -58,8 +58,10 @@ class AnimationController(
                 val delayMs = logicStep.delay.toLong()
                 val sequence = logicStep.sequence
 
-                // Xác định số lần lặp
-                val isInfinite = sequence is String && sequence == "infinity"
+                // ✅ Xác định số lần lặp - sequence: 0 hoặc "infinity" = lặp vô hạn
+                val isInfinite = (sequence is String && sequence == "infinity") || 
+                                 (sequence is Int && sequence == 0) ||
+                                 (sequence is Double && sequence == 0.0)
                 val repeatCount = if (isInfinite) Int.MAX_VALUE else {
                     when (sequence) {
                         is Int -> sequence

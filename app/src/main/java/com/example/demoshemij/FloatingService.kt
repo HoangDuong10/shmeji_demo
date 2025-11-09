@@ -45,6 +45,7 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
         val params: WindowManager.LayoutParams,
         val controller: SpriteController,
         val characterData: CharacterData, // ✅ Thêm thông tin nhân vật
+        val characterName: String, // ✅ Tên nhân vật để quản lý
         var isDragging: Boolean = false,
         var initialTouchX: Float = 0f,
         var initialTouchY: Float = 0f,
@@ -75,9 +76,52 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
         super.onStartCommand(intent, flags, startId)
         when (intent?.action) {
             "ADD_SPRITE" -> addNewSprite()
+            "START_GOKU" -> startCharacter("goku")
+            "STOP_GOKU" -> stopCharacter("goku")
+            "START_VAMPIRE" -> startCharacter("vampire")
+            "STOP_VAMPIRE" -> stopCharacter("vampire")
             "STOP_ALL" -> stopAllSprites()
         }
         return START_STICKY
+    }
+
+    // ✅ Bật nhân vật cụ thể
+    private fun startCharacter(characterName: String) {
+        // Kiểm tra xem nhân vật đã chạy chưa
+        val existingSprite = spriteList.find { it.characterName == characterName }
+        if (existingSprite != null) {
+            Log.d("FloatingService", "$characterName đã đang chạy")
+            return
+        }
+        
+        // Tạo sprite mới cho nhân vật này
+        addNewSprite(characterName)
+    }
+
+    // ✅ Tắt nhân vật cụ thể
+    private fun stopCharacter(characterName: String) {
+        val spritesToRemove = spriteList.filter { it.characterName == characterName }
+        
+        spritesToRemove.forEach { instance ->
+            instance.moveJob?.cancel()
+            instance.moveJob = null
+
+            try {
+                if (instance.view.isAttachedToWindow) {
+                    windowManager.removeView(instance.view)
+                }
+            } catch (e: IllegalArgumentException) {
+                Log.e("FloatingSprite", "View already removed", e)
+            }
+        }
+        
+        spriteList.removeAll(spritesToRemove)
+        Log.d("FloatingService", "Đã tắt $characterName (${spritesToRemove.size} sprite)")
+        
+        // Nếu không còn sprite nào, stop service
+        if (spriteList.isEmpty()) {
+            stopSelf()
+        }
     }
 
     // ✅ Cancel đúng cách tất cả jobs trước khi remove view
@@ -119,11 +163,12 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    private fun addNewSprite() {
+    private fun addNewSprite(characterName: String = "vampire") {
         val (screenWidth, screenHeight) = getScreenSize(this@FloatingSpriteService)
         val controller = SpriteController()
-        // ✅ Lấy nhân vật hiện tại được chọn khi tạo sprite
-        val selectedCharacter = CharacterRepository.getCurrentCharacter()
+        // ✅ Lấy nhân vật theo tên được truyền vào
+        val selectedCharacter = CharacterRepository.availableCharacters.find { it.id == characterName }
+            ?: CharacterRepository.getCurrentCharacter()
         var instance: SpriteInstance? = null
 
         val newView = ComposeView(this).apply {
@@ -146,7 +191,8 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                         instance?.let { resumeSpriteAnimation(it) }
                     },
                     instance = instance,
-                    isInitial = true
+                    isInitial = true,
+                    characterName = characterName
                 )
             }
         }
@@ -174,7 +220,8 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
             view = newView,
             params = params,
             controller = controller,
-            characterData = selectedCharacter // ✅ Lưu nhân vật cho sprite này
+            characterData = selectedCharacter, // ✅ Lưu nhân vật cho sprite này
+            characterName = characterName // ✅ Lưu tên nhân vật
         )
 
         startSpriteAnimation(instance)
@@ -317,7 +364,8 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
         characterData: CharacterData,
         onCustomAnimationFinished: () -> Unit,
         isInitial : Boolean,
-        instance : SpriteInstance? = null
+        instance : SpriteInstance? = null,
+        characterName: String = "vampire"
     ) {
         // ✅ SỬ DỤNG COMPONENT MỚI TỪ JSON
         com.example.demoshemij.component.JsonAnimatedSprite(
@@ -350,7 +398,7 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                     }
                 }
             },
-            characterName = "vampire"
+            characterName = characterName
         )
     }
 

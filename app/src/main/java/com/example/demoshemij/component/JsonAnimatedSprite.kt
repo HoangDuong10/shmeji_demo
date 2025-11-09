@@ -38,10 +38,10 @@ fun JsonAnimatedSprite(
 ) {
     val context = LocalContext.current
     
-    // Tạo controller cho state hiện tại
-    val controller = remember(spriteState) {
+    // ✅ Tạo controller cho state hiện tại - PHÂN BIỆT THEO CHARACTER
+    val controller = remember(spriteState, characterName) {
         val ctrl = AnimationMapper.getControllerForState(context, spriteState, characterName)
-        Log.d("JsonAnimatedSprite", "Created controller for state: $spriteState, controller: $ctrl")
+        Log.d("JsonAnimatedSprite", "Created controller for character: $characterName, state: $spriteState, controller: $ctrl")
         ctrl
     }
     
@@ -61,9 +61,10 @@ fun JsonAnimatedSprite(
     val currentFrameId by controller?.currentFrameId?.collectAsState() ?: remember { mutableStateOf(1) }
     val frameUrl = controller?.getCurrentFrameUrl()
     
-    // Xử lý animation kết thúc cho CUSTOM
-    LaunchedEffect(spriteState) {
+    // ✅ Xử lý animation kết thúc cho CUSTOM - KEY RIÊNG
+    LaunchedEffect(key1 = "custom_$characterName", key2 = spriteState) {
         if (spriteState == SpriteState1.CUSTOM) {
+            Log.d("JsonAnimatedSprite", "[$characterName] CUSTOM animation started")
             // Tính tổng thời gian animation
             val characterData = JsonLoader.loadCharacterData(context)
             val animationData = characterData?.characters?.firstOrNull()
@@ -86,23 +87,25 @@ fun JsonAnimatedSprite(
             }
             
             if (totalDuration > 0) {
+                Log.d("JsonAnimatedSprite", "[$characterName] Waiting for CUSTOM: ${totalDuration}ms")
                 delay(totalDuration)
+                Log.d("JsonAnimatedSprite", "[$characterName] CUSTOM finished, calling callback")
                 onCustomAnimationFinished()
             }
         }
     }
     
-    // Xử lý impact finish cho Bottom
-    LaunchedEffect(spriteState) {
+    // ✅ Xử lý impact finish cho Bottom - KEY RIÊNG
+    LaunchedEffect(key1 = "impact_$characterName", key2 = spriteState) {
         if (spriteState == SpriteState1.Bottom) {
-            Log.d("JsonAnimatedSprite", "State changed to Bottom, calculating impact duration...")
+            Log.d("JsonAnimatedSprite", "[$characterName] State changed to Bottom, calculating impact duration...")
             
             // ✅ Tính tổng thời gian animation impact
             val characterData = JsonLoader.loadCharacterData(context)
             val animationData = characterData?.characters?.firstOrNull()
                 ?.get(characterName)?.animations?.get("impact")
             
-            Log.d("JsonAnimatedSprite", "Animation data for 'impact': $animationData")
+            Log.d("JsonAnimatedSprite", "[$characterName] Animation data for 'impact': $animationData")
             
             var totalDuration = 0L
             animationData?.logic?.forEach { logicStep ->
@@ -119,34 +122,34 @@ fun JsonAnimatedSprite(
                     totalDuration += frames * delayTime * sequence
                 }
                 
-                Log.d("JsonAnimatedSprite", "Logic step: frames=$frames, delay=$delayTime, sequence=$sequence, subtotal=${frames * delayTime * sequence}ms")
+                Log.d("JsonAnimatedSprite", "[$characterName] Logic step: frames=$frames, delay=$delayTime, sequence=$sequence, subtotal=${frames * delayTime * sequence}ms")
             }
             
-            Log.d("JsonAnimatedSprite", "Total impact duration calculated: ${totalDuration}ms")
+            Log.d("JsonAnimatedSprite", "[$characterName] Total impact duration calculated: ${totalDuration}ms")
             
             // ✅ Đợi animation impact chạy xong rồi mới gọi callback
             if (totalDuration > 0) {
-                Log.d("JsonAnimatedSprite", "Waiting for impact animation: ${totalDuration}ms")
+                Log.d("JsonAnimatedSprite", "[$characterName] Waiting for impact animation: ${totalDuration}ms")
                 delay(totalDuration)
             } else {
                 // Fallback nếu không tính được thời gian
-                Log.w("JsonAnimatedSprite", "Could not calculate impact duration, using fallback 500ms")
+                Log.w("JsonAnimatedSprite", "[$characterName] Could not calculate impact duration, using fallback 500ms")
                 delay(500)
             }
             
-            Log.d("JsonAnimatedSprite", "Impact animation finished, calling onImpactFinish()")
+            Log.d("JsonAnimatedSprite", "[$characterName] Impact animation finished, calling onImpactFinish()")
             onImpactFinish()
         }
     }
     
-    // Lấy drawable resource
-    val imageRes = remember(frameUrl) {
+    // ✅ Lấy drawable resource - PHÂN BIỆT THEO CHARACTER
+    val imageRes = remember(frameUrl, characterName) {
         val resId = frameUrl?.let { 
-            val id = AnimationMapper.getDrawableId(context, it, "vampire")
-            Log.d("JsonAnimatedSprite", "Looking for drawable: $it -> ID: $id")
+            val id = AnimationMapper.getDrawableId(context, it, characterName)
+            Log.d("JsonAnimatedSprite", "[$characterName] Looking for drawable: $it -> ID: $id")
             id
         } ?: run {
-            Log.e("JsonAnimatedSprite", "frameUrl is null! Controller: $controller, State: $spriteState")
+            Log.e("JsonAnimatedSprite", "[$characterName] frameUrl is null! Controller: $controller, State: $spriteState")
             android.R.drawable.ic_menu_report_image
         }
         resId
@@ -211,8 +214,8 @@ fun JsonAnimatedSprite(
         )
     }
     
-    // Log để debug
-    LaunchedEffect(currentFrameId, frameUrl) {
-        Log.d("JsonAnimatedSprite", "State: $spriteState, Frame ID: $currentFrameId, URL: $frameUrl, Drawable: $imageRes")
+    // ✅ Log để debug - KEY RIÊNG
+    LaunchedEffect(key1 = "debug_$characterName", key2 = currentFrameId, key3 = frameUrl) {
+        Log.d("JsonAnimatedSprite", "[$characterName] State: $spriteState, Frame ID: $currentFrameId, URL: $frameUrl, Drawable: $imageRes")
     }
 }
