@@ -4,6 +4,10 @@
           "goku": {
             "folder": "goku",
             "thumbnail": "goku.png",
+            "overflow": {
+              "horizontal": 0.43,
+              "vertical": 0.43
+            },
             "animations": {
               "idle": {
                 "thumb": "idle.png",
@@ -261,6 +265,10 @@
           "vampire": {
           "folder": "vampire",
           "thumbnail": "vampire.png",
+          "overflow": {
+            "horizontal": 0.35,
+            "vertical": 0.35
+          },
                 "animations": {
                     "idle": {
                         "thumb": "idle.png",

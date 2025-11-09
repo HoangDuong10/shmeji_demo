@@ -7,7 +7,13 @@ data class CharacterList(
 data class CharacterData(
     val folder: String,
     val thumbnail: String,
+    val overflow: OverflowConfig? = null, // ✅ Cấu hình tỷ lệ tràn ra màn hình
     val animations: Map<String, AnimationData>
+)
+
+data class OverflowConfig(
+    val horizontal: Double = 0.333, // Mặc định 1/3
+    val vertical: Double = 0.333    // Mặc định 1/3
 )
 
 data class AnimationData(
