@@ -301,186 +301,186 @@ fun MovingSprite(
 
 }
 
-@Composable
-fun ShimejiSprite(
-    spriteState: SpriteState1,
-    spriteFlip: SpriteFlip1?,
-    onCustomAnimationFinished: () -> Unit,
-    onImpactFinish : () -> Unit
-) {
-    var currentFrame by remember { mutableStateOf(0) }
-
-    val idleImages = remember { listOf(R.drawable.vampire_idle_1, R.drawable.vampire_idle_2) }
-    val touchImages = remember { listOf(R.drawable.vampire_hover_1, R.drawable.vampire_hover_2, R.drawable.vampire_hover_3) }
-    val fallImages = remember { listOf(R.drawable.vampire_falling_1, R.drawable.vampire_falling_2) }
-    val bottomImages = remember { listOf(R.drawable.vampire_impact_1, R.drawable.vampire_impact_2, R.drawable.vampire_impact_3) }
-    val dashImages = remember {
-        listOf(
-            R.drawable.vampire_dash_1,
-            R.drawable.vampire_dash_2,
-            R.drawable.vampire_dash_3,
-            R.drawable.vampire_dash_4,
-            R.drawable.vampire_dash_5,
-            R.drawable.vampire_dash_6,
-            R.drawable.vampire_dash_7,
-            R.drawable.vampire_dash_8,
-        )
-    }
-    val climbImages = remember { listOf(R.drawable.vampire_climb_1, R.drawable.vampire_climb_2, R.drawable.vampire_climb_3) }
-    val customImage = remember {
-        listOf(
-            R.drawable.vampire_custom_1,
-            R.drawable.vampire_custom_2,
-            R.drawable.vampire_custom_3,
-            R.drawable.vampire_custom_4,
-            R.drawable.vampire_custom_5,
-            R.drawable.vampire_custom_6,
-            R.drawable.vampire_custom_7,
-            R.drawable.vampire_custom_8,
-            R.drawable.vampire_custom_9,
-            R.drawable.vampire_custom_10,
-            R.drawable.vampire_custom_11,
-            R.drawable.vampire_custom_12,
-            R.drawable.vampire_custom_13,
-            R.drawable.vampire_custom_14,
-            R.drawable.vampire_custom_15,
-            R.drawable.vampire_custom_16,
-            R.drawable.vampire_custom_17,
-        )
-    }
-    val walkingImages = remember { listOf(R.drawable.vampire_walking_1, R.drawable.vampire_walking_2) }
-    var width by  remember { mutableStateOf(0) }
-    val idleDelay = 1000/3L
-    val touchDelay = 250L
-    val bottomDelay = 500L
-    val fallDelay = 250L
-    val dashStartDelay = 160L
-    val dashLoopDelay = 333L
-
-    LaunchedEffect(spriteState) {
-        currentFrame = 0
-        when (spriteState) {
-            SpriteState1.Idle -> {
-                width = 160
-                animateFrames(idleImages, idleDelay) { currentFrame = it }
-
-            }
-            SpriteState1.Touch -> {
-                width = 100
-                animateFrames(touchImages, touchDelay) { currentFrame = it }
-
-            }
-            SpriteState1.Bottom -> animateImpact(bottomImages, setFrame = {currentFrame = it}, onFinished = onImpactFinish)
-            SpriteState1.FALL -> animateFrames(fallImages, fallDelay) { currentFrame = it }
-            SpriteState1.CLIMB -> animateFrames(climbImages, 1000/3L) { currentFrame = it }
-            SpriteState1.DASH ->   animateDash1(dashImages,setFrame = {currentFrame = it} )
-            SpriteState1.CUSTOM -> {
-                width = 300
-                animateCustom11(customImage,  onFinished = onCustomAnimationFinished,setFrame = {currentFrame = it} )
-            }
-            SpriteState1.WALKING -> {
-                width = 50
-                animateFrames(walkingImages, idleDelay) { currentFrame = it }
-            }
-        }
-    }
-
-    val imageRes = when (spriteState) {
-        SpriteState1.Idle -> idleImages.getOrNull(currentFrame) ?: idleImages.first()
-        SpriteState1.Touch -> touchImages.getOrNull(currentFrame) ?: touchImages.first()
-        SpriteState1.Bottom -> bottomImages.getOrNull(currentFrame) ?: bottomImages.first()
-        SpriteState1.FALL -> fallImages.getOrNull(currentFrame) ?: fallImages.first()
-        SpriteState1.DASH -> dashImages.getOrNull(currentFrame) ?: dashImages.first()
-        SpriteState1.CLIMB -> climbImages.getOrNull(currentFrame) ?: climbImages.first()
-        SpriteState1.CUSTOM -> customImage.getOrNull(currentFrame) ?: customImage.first()
-        SpriteState1.WALKING -> walkingImages.getOrNull(currentFrame) ?: walkingImages.first()
-    }
-    val imageBitmap = ImageBitmap.imageResource(id = walkingImages[0])
-    val imageBitmap11 = ImageBitmap.imageResource(id =imageRes).width.toFloat()
-    val aspectRatio = imageBitmap.width.toFloat()/10
-//    Log.d("ShimejiSprite", "Aspect Ratio: $aspectRatio")
-    Log.d("ShimejiSprite", "Aspect Ratio111: ${imageBitmap11 / 10}")
-    val animatedScaleX by animateFloatAsState(
-        targetValue = when (spriteFlip) {
-            SpriteFlip1.LEFT -> 1f
-            SpriteFlip1.RIGHT -> -1f
-            else -> 1f
-        },
-        animationSpec = tween(
-            durationMillis = 300,
-            easing = LinearOutSlowInEasing
-        ),
-        label = "flipAnimation"
-    )
-
-    // 🧩 Thu nhỏ 20% so với kích thước gốc
-    val scaleFactor = 0.2f
-    val widthDp = with(LocalDensity.current) { (imageBitmap.width * scaleFactor).toDp() }
-    Box(
-        modifier = Modifier.size(150.dp*(755/688f)),
-        contentAlignment = Alignment.TopEnd
-    ) {
-        Image(
-            painter = painterResource(id = imageRes),
-            contentDescription = null,
-            modifier = Modifier
-                .size(150.dp*(766/688f))
-                .offset(
-                    x = when {
-                        spriteFlip == SpriteFlip1.TOP ||
-                                spriteState == SpriteState1.Touch ||
-                                spriteState == SpriteState1.FALL ||
-                                spriteState == SpriteState1.Bottom ||
-                                spriteState == SpriteState1.DASH ||
-                                spriteState == SpriteState1.CUSTOM ||
-                                spriteState == SpriteState1.Idle
-                            -> 0.dp
-                        spriteFlip == SpriteFlip1.LEFT && spriteState!= SpriteState1.WALKING -> (0).dp
-                        spriteFlip == SpriteFlip1.RIGHT && spriteState!= SpriteState1.WALKING -> (0).dp
-                        else -> 0.dp
-                    },
-                    y = when {
-                        // ⚡ Chỉ khi leo trần mới nâng sprite lên -33dp
-                        spriteFlip == SpriteFlip1.TOP && spriteState == SpriteState1.CLIMB -> (0).dp
-                        else -> 0.dp
-                    }
-                )
-                .graphicsLayer {
-                    when {
-                        // ⚡ Nếu đang TOUCH hoặc FALL → luôn bình thường
-
-                        // ⚡ Nếu đang leo tường (CLIMB) + hướng TOP → xoay 90°
-                        spriteState == SpriteState1.CLIMB && spriteFlip == SpriteFlip1.TOP -> {
-                            scaleX = 1f
-                            rotationZ = 90f
-                        }
-
-                        // ⚡ Các hướng khác giữ nguyên logic cũ
-                        spriteFlip == SpriteFlip1.LEFT -> {
-                            scaleX = 1f
-                            rotationZ = 0f
-                        }
-
-                        spriteFlip == SpriteFlip1.RIGHT -> {
-                            scaleX = -1f
-                            rotationZ = 0f
-                        }
-
-                        else -> {
-                            scaleX = 1f
-                            rotationZ = 0f
-                        }
-                    }
-                }
-//                .background(Color.Red)
-            ,
-            contentScale = ContentScale.Fit
-
-        )
-    }
-
-
-}
+//@Composable
+//fun ShimejiSprite(
+//    spriteState: SpriteState1,
+//    spriteFlip: SpriteFlip1?,
+//    onCustomAnimationFinished: () -> Unit,
+//    onImpactFinish : () -> Unit
+//) {
+//    var currentFrame by remember { mutableStateOf(0) }
+//
+//    val idleImages = remember { listOf(R.drawable.vampire_idle_1, R.drawable.vampire_idle_2) }
+//    val touchImages = remember { listOf(R.drawable.vampire_hover_1, R.drawable.vampire_hover_2, R.drawable.vampire_hover_3) }
+//    val fallImages = remember { listOf(R.drawable.vampire_falling_1, R.drawable.vampire_falling_2) }
+//    val bottomImages = remember { listOf(R.drawable.vampire_impact_1, R.drawable.vampire_impact_2, R.drawable.vampire_impact_3) }
+//    val dashImages = remember {
+//        listOf(
+//            R.drawable.vampire_dash_1,
+//            R.drawable.vampire_dash_2,
+//            R.drawable.vampire_dash_3,
+//            R.drawable.vampire_dash_4,
+//            R.drawable.vampire_dash_5,
+//            R.drawable.vampire_dash_6,
+//            R.drawable.vampire_dash_7,
+//            R.drawable.vampire_dash_8,
+//        )
+//    }
+//    val climbImages = remember { listOf(R.drawable.vampire_climb_1, R.drawable.vampire_climb_2, R.drawable.vampire_climb_3) }
+//    val customImage = remember {
+//        listOf(
+//            R.drawable.vampire_custom_1,
+//            R.drawable.vampire_custom_2,
+//            R.drawable.vampire_custom_3,
+//            R.drawable.vampire_custom_4,
+//            R.drawable.vampire_custom_5,
+//            R.drawable.vampire_custom_6,
+//            R.drawable.vampire_custom_7,
+//            R.drawable.vampire_custom_8,
+//            R.drawable.vampire_custom_9,
+//            R.drawable.vampire_custom_10,
+//            R.drawable.vampire_custom_11,
+//            R.drawable.vampire_custom_12,
+//            R.drawable.vampire_custom_13,
+//            R.drawable.vampire_custom_14,
+//            R.drawable.vampire_custom_15,
+//            R.drawable.vampire_custom_16,
+//            R.drawable.vampire_custom_17,
+//        )
+//    }
+//    val walkingImages = remember { listOf(R.drawable.vampire_walking_1, R.drawable.vampire_walking_2) }
+//    var width by  remember { mutableStateOf(0) }
+//    val idleDelay = 1000/3L
+//    val touchDelay = 250L
+//    val bottomDelay = 500L
+//    val fallDelay = 250L
+//    val dashStartDelay = 160L
+//    val dashLoopDelay = 333L
+//
+//    LaunchedEffect(spriteState) {
+//        currentFrame = 0
+//        when (spriteState) {
+//            SpriteState1.Idle -> {
+//                width = 160
+//                animateFrames(idleImages, idleDelay) { currentFrame = it }
+//
+//            }
+//            SpriteState1.Touch -> {
+//                width = 100
+//                animateFrames(touchImages, touchDelay) { currentFrame = it }
+//
+//            }
+//            SpriteState1.Bottom -> animateImpact(bottomImages, setFrame = {currentFrame = it}, onFinished = onImpactFinish)
+//            SpriteState1.FALL -> animateFrames(fallImages, fallDelay) { currentFrame = it }
+//            SpriteState1.CLIMB -> animateFrames(climbImages, 1000/3L) { currentFrame = it }
+//            SpriteState1.DASH ->   animateDash1(dashImages,setFrame = {currentFrame = it} )
+//            SpriteState1.CUSTOM -> {
+//                width = 300
+//                animateCustom11(customImage,  onFinished = onCustomAnimationFinished,setFrame = {currentFrame = it} )
+//            }
+//            SpriteState1.WALKING -> {
+//                width = 50
+//                animateFrames(walkingImages, idleDelay) { currentFrame = it }
+//            }
+//        }
+//    }
+//
+//    val imageRes = when (spriteState) {
+//        SpriteState1.Idle -> idleImages.getOrNull(currentFrame) ?: idleImages.first()
+//        SpriteState1.Touch -> touchImages.getOrNull(currentFrame) ?: touchImages.first()
+//        SpriteState1.Bottom -> bottomImages.getOrNull(currentFrame) ?: bottomImages.first()
+//        SpriteState1.FALL -> fallImages.getOrNull(currentFrame) ?: fallImages.first()
+//        SpriteState1.DASH -> dashImages.getOrNull(currentFrame) ?: dashImages.first()
+//        SpriteState1.CLIMB -> climbImages.getOrNull(currentFrame) ?: climbImages.first()
+//        SpriteState1.CUSTOM -> customImage.getOrNull(currentFrame) ?: customImage.first()
+//        SpriteState1.WALKING -> walkingImages.getOrNull(currentFrame) ?: walkingImages.first()
+//    }
+//    val imageBitmap = ImageBitmap.imageResource(id = walkingImages[0])
+//    val imageBitmap11 = ImageBitmap.imageResource(id =imageRes).width.toFloat()
+//    val aspectRatio = imageBitmap.width.toFloat()/10
+////    Log.d("ShimejiSprite", "Aspect Ratio: $aspectRatio")
+//    Log.d("ShimejiSprite", "Aspect Ratio111: ${imageBitmap11 / 10}")
+//    val animatedScaleX by animateFloatAsState(
+//        targetValue = when (spriteFlip) {
+//            SpriteFlip1.LEFT -> 1f
+//            SpriteFlip1.RIGHT -> -1f
+//            else -> 1f
+//        },
+//        animationSpec = tween(
+//            durationMillis = 300,
+//            easing = LinearOutSlowInEasing
+//        ),
+//        label = "flipAnimation"
+//    )
+//
+//    // 🧩 Thu nhỏ 20% so với kích thước gốc
+//    val scaleFactor = 0.2f
+//    val widthDp = with(LocalDensity.current) { (imageBitmap.width * scaleFactor).toDp() }
+//    Box(
+//        modifier = Modifier.size(150.dp*(755/688f)),
+//        contentAlignment = Alignment.TopEnd
+//    ) {
+//        Image(
+//            painter = painterResource(id = imageRes),
+//            contentDescription = null,
+//            modifier = Modifier
+//                .size(150.dp*(766/688f))
+//                .offset(
+//                    x = when {
+//                        spriteFlip == SpriteFlip1.TOP ||
+//                                spriteState == SpriteState1.Touch ||
+//                                spriteState == SpriteState1.FALL ||
+//                                spriteState == SpriteState1.Bottom ||
+//                                spriteState == SpriteState1.DASH ||
+//                                spriteState == SpriteState1.CUSTOM ||
+//                                spriteState == SpriteState1.Idle
+//                            -> 0.dp
+//                        spriteFlip == SpriteFlip1.LEFT && spriteState!= SpriteState1.WALKING -> (0).dp
+//                        spriteFlip == SpriteFlip1.RIGHT && spriteState!= SpriteState1.WALKING -> (0).dp
+//                        else -> 0.dp
+//                    },
+//                    y = when {
+//                        // ⚡ Chỉ khi leo trần mới nâng sprite lên -33dp
+//                        spriteFlip == SpriteFlip1.TOP && spriteState == SpriteState1.CLIMB -> (0).dp
+//                        else -> 0.dp
+//                    }
+//                )
+//                .graphicsLayer {
+//                    when {
+//                        // ⚡ Nếu đang TOUCH hoặc FALL → luôn bình thường
+//
+//                        // ⚡ Nếu đang leo tường (CLIMB) + hướng TOP → xoay 90°
+//                        spriteState == SpriteState1.CLIMB && spriteFlip == SpriteFlip1.TOP -> {
+//                            scaleX = 1f
+//                            rotationZ = 90f
+//                        }
+//
+//                        // ⚡ Các hướng khác giữ nguyên logic cũ
+//                        spriteFlip == SpriteFlip1.LEFT -> {
+//                            scaleX = 1f
+//                            rotationZ = 0f
+//                        }
+//
+//                        spriteFlip == SpriteFlip1.RIGHT -> {
+//                            scaleX = -1f
+//                            rotationZ = 0f
+//                        }
+//
+//                        else -> {
+//                            scaleX = 1f
+//                            rotationZ = 0f
+//                        }
+//                    }
+//                }
+////                .background(Color.Red)
+//            ,
+//            contentScale = ContentScale.Fit
+//
+//        )
+//    }
+//
+//
+//}
 
 private suspend fun animateFrames(images: List<Int>, frameDelay: Long, setFrame: (Int) -> Unit = {}) {
     var current = 0
