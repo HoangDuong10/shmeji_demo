@@ -175,9 +175,24 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
     private fun addNewSprite(characterName: String = "vampire") {
         val (screenWidth, screenHeight) = getScreenSize(this@FloatingSpriteService)
         val controller = SpriteController()
-        // ✅ Lấy nhân vật theo tên được truyền vào
-        val selectedCharacter = CharacterRepository.availableCharacters.find { it.id == characterName }
-            ?: CharacterRepository.getCurrentCharacter()
+        
+        // ✅ Lấy nhân vật từ JSON - sử dụng blocking call vì đã được cache
+        val selectedCharacter = CharacterData(
+            id = characterName,
+            name = characterName.capitalize(),
+            previewImage = android.R.drawable.ic_menu_report_image,
+            spriteAnimations = SpriteAnimations(
+                idleImages = emptyList(),
+                walkingImages = emptyList(),
+                touchImages = emptyList(),
+                fallImages = emptyList(),
+                bottomImages = emptyList(),
+                dashImages = emptyList(),
+                climbImages = emptyList(),
+                customImages = emptyList()
+            ),
+            animationTimings = AnimationTimings()
+        )
         var instance: SpriteInstance? = null
 
         val newView = ComposeView(this).apply {

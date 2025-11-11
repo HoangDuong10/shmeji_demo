@@ -82,13 +82,16 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             DemoShemijTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    MainScreen(
-                        modifier = Modifier.padding(innerPadding),
-                        onAddSprite = { startFloatingService("ADD_SPRITE") },
-                        onStopAll = { startFloatingService("STOP_ALL") },
-                        checkOverlayPermission = { checkAndRequestOverlayPermission() }
-                    )
+                // ✅ Thêm PreloadWrapper để preload ảnh từ URL trước
+                com.example.demoshemij.ui.PreloadWrapper {
+                    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                        MainScreen(
+                            modifier = Modifier.padding(innerPadding),
+                            onAddSprite = { startFloatingService("ADD_SPRITE") },
+                            onStopAll = { startFloatingService("STOP_ALL") },
+                            checkOverlayPermission = { checkAndRequestOverlayPermission() }
+                        )
+                    }
                 }
             }
         }

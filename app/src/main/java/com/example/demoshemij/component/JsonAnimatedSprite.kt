@@ -1,6 +1,5 @@
 package com.example.demoshemij.component
 
-import android.graphics.BitmapFactory
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -8,18 +7,17 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import coil.size.Size
 import com.example.demoshemij.SpriteFlip1
 import com.example.demoshemij.SpriteState1
 import com.example.demoshemij.domain.AnimationController
@@ -65,13 +63,29 @@ fun JsonAnimatedSprite(
     val currentFrameId by controller?.currentFrameId?.collectAsState() ?: remember { mutableStateOf(1) }
     val frameUrl = controller?.getCurrentFrameUrl()
     
+    // ✅ Load character data từ JSON
+    var characterData by remember(characterName) { mutableStateOf<com.example.demoshemij.domain.CharacterData?>(null) }
+    
+    LaunchedEffect(characterName) {
+        val data = JsonLoader.loadCharacterData(context)
+        characterData = data?.characters?.firstOrNull()?.get(characterName)
+    }
+    
+    val fullImageUrl = remember(frameUrl, characterData) {
+        frameUrl?.let { 
+            characterData?.folder?.let { folder ->
+                "${JsonLoader.BASE_IMAGE_URL}$folder/$it"
+            }
+        }
+    }
+    
     // ✅ Xử lý animation kết thúc cho CUSTOM - KEY RIÊNG
     LaunchedEffect(key1 = "custom_$characterName", key2 = spriteState) {
         if (spriteState == SpriteState1.CUSTOM) {
             Log.d("JsonAnimatedSprite", "[$characterName] CUSTOM animation started")
             // Tính tổng thời gian animation
-            val characterData = JsonLoader.loadCharacterData(context)
-            val animationData = characterData?.characters?.firstOrNull()
+            val jsonData = JsonLoader.loadCharacterData(context)
+            val animationData = jsonData?.characters?.firstOrNull()
                 ?.get(characterName)?.animations?.get("custom")
             
             var totalDuration = 0L
@@ -105,8 +119,8 @@ fun JsonAnimatedSprite(
             Log.d("JsonAnimatedSprite", "[$characterName] State changed to Bottom, calculating impact duration...")
             
             // ✅ Tính tổng thời gian animation impact
-            val characterData = JsonLoader.loadCharacterData(context)
-            val animationData = characterData?.characters?.firstOrNull()
+            val jsonData = JsonLoader.loadCharacterData(context)
+            val animationData = jsonData?.characters?.firstOrNull()
                 ?.get(characterName)?.animations?.get("impact")
             
             Log.d("JsonAnimatedSprite", "[$characterName] Animation data for 'impact': $animationData")
@@ -146,76 +160,63 @@ fun JsonAnimatedSprite(
         }
     }
     
-    // ✅ Lấy drawable resource - PHÂN BIỆT THEO CHARACTER
-    val imageRes = remember(frameUrl, characterName) {
-        val resId = frameUrl?.let { 
-            val id = AnimationMapper.getDrawableId(context, it, characterName)
-            Log.d("JsonAnimatedSprite", "[$characterName] Looking for drawable: $it -> ID: $id")
-            id
-        } ?: run {
-            Log.e("JsonAnimatedSprite", "[$characterName] frameUrl is null! Controller: $controller, State: $spriteState")
-            android.R.drawable.ic_menu_report_image
-        }
-        resId
-    }
-    
-    // Animation scale cho flip
-    val animatedScaleX = when (spriteFlip) {
-        SpriteFlip1.LEFT -> 1f
-        SpriteFlip1.RIGHT -> -1f
-        else -> 1f
-    }
-
-        Image(
-            bitmap = ImageBitmap.imageResource(id = imageRes),
-            contentDescription = null,
-            modifier = Modifier
-                .size(150.dp * (755 / 688f))
-                .aspectRatio(755/688f)
-                .offset(
-                    x = when {
-                        spriteFlip == SpriteFlip1.TOP ||
-                                spriteState == SpriteState1.Touch ||
-                                spriteState == SpriteState1.FALL ||
-                                spriteState == SpriteState1.Bottom ||
-                                spriteState == SpriteState1.DASH ||
-                                spriteState == SpriteState1.CUSTOM ||
-                                spriteState == SpriteState1.Idle
-                        -> 0.dp
-                        spriteFlip == SpriteFlip1.LEFT && spriteState != SpriteState1.WALKING -> 0.dp
-                        spriteFlip == SpriteFlip1.RIGHT && spriteState != SpriteState1.WALKING -> 0.dp
-                        else -> 0.dp
-                    },
-                    y = when {
-                        spriteFlip == SpriteFlip1.TOP && spriteState == SpriteState1.CLIMB -> 0.dp
-                        else -> 0.dp
+    // ✅ Dùng Coil AsyncImage để load ảnh mượt mà
+    AsyncImage(
+        model = ImageRequest.Builder(context)
+            .data(fullImageUrl)
+            .crossfade(false) // Tắt crossfade để animation nhanh hơn
+            .size(Size.ORIGINAL) // Load full size
+            .memoryCacheKey(fullImageUrl) // Cache key
+            .diskCacheKey(fullImageUrl) // Disk cache key
+            .build(),
+        contentDescription = null,
+        contentScale = ContentScale.Fit,
+        modifier = Modifier
+            .size(150.dp * (755 / 688f))
+            .aspectRatio(755 / 688f)
+            .offset(
+                x = when {
+                    spriteFlip == SpriteFlip1.TOP ||
+                            spriteState == SpriteState1.Touch ||
+                            spriteState == SpriteState1.FALL ||
+                            spriteState == SpriteState1.Bottom ||
+                            spriteState == SpriteState1.DASH ||
+                            spriteState == SpriteState1.CUSTOM ||
+                            spriteState == SpriteState1.Idle
+                    -> 0.dp
+                    spriteFlip == SpriteFlip1.LEFT && spriteState != SpriteState1.WALKING -> 0.dp
+                    spriteFlip == SpriteFlip1.RIGHT && spriteState != SpriteState1.WALKING -> 0.dp
+                    else -> 0.dp
+                },
+                y = when {
+                    spriteFlip == SpriteFlip1.TOP && spriteState == SpriteState1.CLIMB -> 0.dp
+                    else -> 0.dp
+                }
+            )
+            .graphicsLayer {
+                when {
+                    spriteState == SpriteState1.CLIMB && spriteFlip == SpriteFlip1.TOP -> {
+                        scaleX = 1f
+                        rotationZ = 90f
                     }
-                )
-                .graphicsLayer {
-                    when {
-                        spriteState == SpriteState1.CLIMB && spriteFlip == SpriteFlip1.TOP -> {
-                            scaleX = 1f
-                            rotationZ = 90f
-                        }
-                        spriteFlip == SpriteFlip1.LEFT -> {
-                            scaleX = 1f
-                            rotationZ = 0f
-                        }
-                        spriteFlip == SpriteFlip1.RIGHT -> {
-                            scaleX = -1f
-                            rotationZ = 0f
-                        }
-                        else -> {
-                            scaleX = 1f
-                            rotationZ = 0f
-                        }
+                    spriteFlip == SpriteFlip1.LEFT -> {
+                        scaleX = 1f
+                        rotationZ = 0f
+                    }
+                    spriteFlip == SpriteFlip1.RIGHT -> {
+                        scaleX = -1f
+                        rotationZ = 0f
+                    }
+                    else -> {
+                        scaleX = 1f
+                        rotationZ = 0f
                     }
                 }
-                .background(Color.Red),
-        )
+            }
+    )
     
     // ✅ Log để debug - KEY RIÊNG
     LaunchedEffect(key1 = "debug_$characterName", key2 = currentFrameId, key3 = frameUrl) {
-        Log.d("JsonAnimatedSprite", "[$characterName] State: $spriteState, Frame ID: $currentFrameId, URL: $frameUrl, Drawable: $imageRes")
+        Log.d("JsonAnimatedSprite", "[$characterName] State: $spriteState, Frame ID: $currentFrameId, URL: $frameUrl, Full URL: $fullImageUrl")
     }
 }

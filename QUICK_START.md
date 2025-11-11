@@ -1,181 +1,105 @@
-# 🚀 Quick Start - Animation System Mới
+# Quick Start Guide - Load Từ URL
 
-## ✅ Đã tích hợp xong!
+## Tóm Tắt Nhanh
 
-App của bạn đã được chuyển từ **hardcoded animations** sang **JSON-based animations**.
+App đã được cập nhật để load JSON và ảnh từ URL thay vì local. Đây là những gì bạn cần biết:
 
-## 📦 Chỉ cần 2 bước
+## URLs
 
-### 1. Sync Gradle
-```bash
-./gradlew build
+### JSON
 ```
-Hoặc trong Android Studio: **File → Sync Project with Gradle Files**
+https://wallpaperhd.nyc3.cdn.digitaloceanspaces.com/Shimeji/data_test.json
+```
 
-### 2. Build & Run
-- Build app
-- Cấp quyền overlay
-- Nhấn "Thêm Sprite"
-- ✨ Sprite sẽ chạy với animations từ JSON!
+### Images
+```
+https://wallpaperhd.nyc3.cdn.digitaloceanspaces.com/Shimeji/{folder}/{filename}
+```
 
-## 🎯 Đã thay đổi gì?
+Ví dụ:
+- `https://wallpaperhd.nyc3.cdn.digitaloceanspaces.com/Shimeji/vampire/idle1.png`
+- `https://wallpaperhd.nyc3.cdn.digitaloceanspaces.com/Shimeji/goku/walking2.png`
 
-### FloatingService.kt
+## Cách Hoạt Động
+
+1. **App Start**: Hiển thị preload screen, download JSON và tất cả ảnh
+2. **Caching**: Tất cả được cache trong disk để dùng offline
+3. **Lần Sau**: Load nhanh từ cache
+
+## Thay Đổi URLs
+
+Nếu muốn đổi URL, sửa trong `JsonLoader.kt`:
+
 ```kotlin
-// ❌ CŨ: ShimejiSprite (hardcoded)
-ShimejiSprite(
-    spriteState = spriteState,
-    spriteFlip = spriteFlip,
-    onCustomAnimationFinished = { ... }
-)
-
-// ✅ MỚI: JsonAnimatedSprite (từ JSON)
-JsonAnimatedSprite(
-    spriteState = spriteState,
-    spriteFlip = spriteFlip,
-    characterName = "goku",
-    onCustomAnimationFinished = { ... }
-)
+const val JSON_URL = "your_json_url_here"
+const val BASE_IMAGE_URL = "your_base_image_url_here"
 ```
 
-### data.json
+## JSON Format
+
 ```json
 {
-  "animations": {
-    "idle": {
-      "frames": [
-        { "id": 1, "url": "vampire_idle_1" },
-        { "id": 2, "url": "vampire_idle_2" }
-      ],
-      "logic": [
-        {
-          "frame": [1, 2],
-          "delay": 333,
-          "sequence": "infinity"
+  "characters": [
+    {
+      "vampire": {
+        "folder": "vampire",
+        "thumbnail": "vampire.png",
+        "animations": {
+          "idle": {
+            "thumb": "idle.png",
+            "frames": [
+              {"id": 1, "url": "idle1.png"},
+              {"id": 2, "url": "idle2.png"}
+            ],
+            "logic": [
+              {"frame": [1, 2], "delay": 333, "sequence": 0}
+            ]
+          }
         }
-      ]
+      }
     }
-  }
-}
-```
-
-## 🎨 Chỉnh animation
-
-### Thay đổi tốc độ
-Mở `app/src/main/assets/data.json`:
-```json
-{
-  "delay": 500  // Thay đổi từ 333 → 500 (chậm hơn)
-}
-```
-
-### Thay đổi số lần lặp
-```json
-{
-  "sequence": 3  // Lặp 3 lần thay vì "infinity"
-}
-```
-
-### Thay đổi thứ tự frames
-```json
-{
-  "frame": [1, 2, 3, 2, 1]  // Tùy chỉnh sequence
-}
-```
-
-## 📊 Animations đã cấu hình
-
-| Animation | Frames | Delay | Logic |
-|-----------|--------|-------|-------|
-| **idle** | 1→2 | 333ms | Lặp vô hạn |
-| **hover** | 1→2→3→2 | 250ms | Lặp vô hạn |
-| **walking** | 1→2 | 333ms | Lặp vô hạn |
-| **falling** | 1→2 | 250ms | Lặp vô hạn |
-| **climb** | 1→2→3→2 | 333ms | Lặp vô hạn |
-| **dash** | 1-6 (1x) → 3-8 (∞) | 167ms | Intro + loop |
-| **custom** | 1-17 | 250ms | Chạy 1 lần |
-
-## 🔍 Debug
-
-### Xem log
-```bash
-adb logcat | grep AnimationController
-```
-
-Output:
-```
-D/AnimationController: Frame: 1, Delay: 333ms, Repeat: 1/∞
-D/AnimationController: Frame: 2, Delay: 333ms, Repeat: 1/∞
-```
-
-## 📁 Files quan trọng
-
-### Core System
-- `AnimationController.kt` - Quản lý animation logic
-- `JsonAnimatedSprite.kt` - Component hiển thị sprite
-- `AnimationMapper.kt` - Map state → animation name
-
-### Configuration
-- `app/src/main/assets/data.json` - Animation config
-- `app/build.gradle.kts` - Gson dependency
-
-### Integration
-- `FloatingService.kt` - Đã tích hợp JsonAnimatedSprite
-
-## 💡 Tips
-
-### Thêm animation mới
-1. Thêm drawable resources: `vampire_newaction_1.png`, `vampire_newaction_2.png`
-2. Cập nhật `data.json`:
-```json
-"newaction": {
-  "frames": [
-    { "id": 1, "url": "vampire_newaction_1" },
-    { "id": 2, "url": "vampire_newaction_2" }
-  ],
-  "logic": [
-    { "frame": [1, 2], "delay": 200, "sequence": "infinity" }
   ]
 }
 ```
-3. Thêm mapping trong `AnimationMapper.kt`
-4. Rebuild
 
-### Test riêng animation
-Sử dụng `AnimationTestScreen.kt`:
-```kotlin
-// Trong MainActivity
-setContent {
-    AnimationTestScreen()
-}
-```
+## Test Nhanh
 
-## 🎉 Lợi ích
+1. Build và run app
+2. Xem preload screen (progress 0-100%)
+3. Bật vampire hoặc goku
+4. Kiểm tra animations chạy đúng
+5. Tắt internet, restart app → vẫn hoạt động (cache)
 
-- ✅ Không cần rebuild để thay đổi animation
-- ✅ Code ngắn gọn, dễ maintain
-- ✅ Dễ thêm animations mới
-- ✅ Non-developers có thể chỉnh JSON
-- ✅ Log rõ ràng để debug
+## Troubleshooting
 
-## 📚 Tài liệu đầy đủ
+### Ảnh không hiển thị?
+- Check internet connection
+- Check logs: `adb logcat | grep ImageLoader`
+- Try clear cache: `adb shell pm clear com.example.demoshemij`
 
-- `ANIMATION_GUIDE.md` - Hướng dẫn chi tiết về JSON format
-- `TESTING_GUIDE.md` - Hướng dẫn test và troubleshooting
-- `MIGRATION_STEPS.md` - Chi tiết các bước migration
-- `SUMMARY.md` - Tóm tắt toàn bộ thay đổi
+### JSON không load?
+- Check URL trong browser
+- Check logs: `adb logcat | grep JsonLoader`
+- Verify JSON format
 
-## ❓ Troubleshooting
+### App chậm?
+- Lần đầu sẽ chậm (download)
+- Lần sau nhanh (cache)
+- Có thể skip preload
 
-### Ảnh không hiển thị
-→ Kiểm tra tên trong JSON match với drawable: `vampire_idle_1`
+## Files Quan Trọng
 
-### Animation không chạy
-→ Xem log: `adb logcat | grep AnimationController`
+- `JsonLoader.kt` - Load JSON từ URL
+- `ImageLoader.kt` - Load ảnh từ URL
+- `PreloadManager.kt` - Preload system
+- `JsonAnimatedSprite.kt` - Display sprite từ URL
 
-### Gson error
-→ Sync Gradle lại
+## Documentation
 
----
+- `URL_MIGRATION_GUIDE.md` - Chi tiết đầy đủ
+- `TEST_INSTRUCTIONS.md` - Hướng dẫn test
+- `MIGRATION_SUMMARY.md` - Tóm tắt thay đổi
 
-**Sẵn sàng để test! 🚀**
+## Done!
+
+Vậy là xong! App giờ load tất cả từ URL với caching. Chỉ cần upload JSON và ảnh lên server là có thể update content mà không cần rebuild app.

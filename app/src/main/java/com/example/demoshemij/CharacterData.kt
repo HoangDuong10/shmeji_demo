@@ -42,112 +42,79 @@ data class AnimationTimings(
 // Repository chứa tất cả nhân vật
 object CharacterRepository {
     
-    // Nhân vật vampire (mặc định hiện tại)
-    private val vampireCharacter = CharacterData(
-        id = "vampire",
-        name = "Vampire",
-        previewImage = R.drawable.vampire_idle_1,
+    // ✅ Placeholder character khi chưa load được JSON
+    private val placeholderCharacter = CharacterData(
+        id = "placeholder",
+        name = "Loading...",
+        previewImage = android.R.drawable.ic_menu_report_image,
         spriteAnimations = SpriteAnimations(
-            idleImages = listOf(R.drawable.vampire_idle_1, R.drawable.vampire_idle_2),
-            walkingImages = listOf(R.drawable.vampire_walking_1, R.drawable.vampire_walking_2),
-            touchImages = listOf(R.drawable.vampire_hover_1, R.drawable.vampire_hover_2, R.drawable.vampire_hover_3),
-            fallImages = listOf(R.drawable.vampire_falling_1, R.drawable.vampire_falling_2),
-            bottomImages = listOf(R.drawable.vampire_impact_1, R.drawable.vampire_impact_2, R.drawable.vampire_impact_3),
-            dashImages = listOf(
-                R.drawable.vampire_dash_1, R.drawable.vampire_dash_2, R.drawable.vampire_dash_3,
-                R.drawable.vampire_dash_4, R.drawable.vampire_dash_5, R.drawable.vampire_dash_6,
-                R.drawable.vampire_dash_7, R.drawable.vampire_dash_8
-            ),
-            climbImages = listOf(R.drawable.vampire_climb_1, R.drawable.vampire_climb_2, R.drawable.vampire_climb_3),
-            customImages = listOf(
-                R.drawable.vampire_custom_1, R.drawable.vampire_custom_2, R.drawable.vampire_custom_3,
-                R.drawable.vampire_custom_4, R.drawable.vampire_custom_5, R.drawable.vampire_custom_6,
-                R.drawable.vampire_custom_7, R.drawable.vampire_custom_8, R.drawable.vampire_custom_9,
-                R.drawable.vampire_custom_10, R.drawable.vampire_custom_11, R.drawable.vampire_custom_12,
-                R.drawable.vampire_custom_13, R.drawable.vampire_custom_14, R.drawable.vampire_custom_15,
-                R.drawable.vampire_custom_16, R.drawable.vampire_custom_17
-            )
+            idleImages = listOf(android.R.drawable.ic_menu_report_image),
+            walkingImages = listOf(android.R.drawable.ic_menu_report_image),
+            touchImages = listOf(android.R.drawable.ic_menu_report_image),
+            fallImages = listOf(android.R.drawable.ic_menu_report_image),
+            bottomImages = listOf(android.R.drawable.ic_menu_report_image),
+            dashImages = listOf(android.R.drawable.ic_menu_report_image),
+            climbImages = listOf(android.R.drawable.ic_menu_report_image),
+            customImages = listOf(android.R.drawable.ic_menu_report_image)
         ),
-        animationTimings = AnimationTimings(
-            idleDelay = 333L, // 1000/3L
-            touchDelay = 250L,
-            bottomDelay = 500L,
-            fallDelay = 250L,
-            dashStartDelay = 160L,
-            dashLoopDelay = 333L,
-            climbDelay = 333L,
-            customDelay = 200L
-        )
+        animationTimings = AnimationTimings()
     )
     
-    // Nhân vật shimeji cũ
-    private val shimejiCharacter = CharacterData(
-        id = "shimeji",
-        name = "Shimeji",
-        previewImage = R.drawable.idle_2,
-        spriteAnimations = SpriteAnimations(
-            idleImages = listOf(R.drawable.idle_2, R.drawable.idle_2),
-            walkingImages = listOf(R.drawable.walking_1, R.drawable.walking_2),
-            touchImages = listOf(R.drawable.anh1, R.drawable.anh2, R.drawable.anh3, R.drawable.anh4),
-            fallImages = listOf(R.drawable.falling_1, R.drawable.falling_2),
-            bottomImages = listOf(R.drawable.impact_2, R.drawable.impact_2, R.drawable.impact_4),
-            dashImages = listOf(R.drawable.dash_1, R.drawable.dash_2, R.drawable.dash_2),
-            climbImages = listOf(R.drawable.climb_1, R.drawable.climb_2, R.drawable.climb_3),
-            customImages = listOf(
-                R.drawable.custom_1, R.drawable.custom_2, R.drawable.custom_3,
-                R.drawable.custom_4, R.drawable.custom_5, R.drawable.custom_6, R.drawable.custom_7
-            )
-        ),
-        animationTimings = AnimationTimings(
-            idleDelay = 500L,
-            touchDelay = 100L,
-            bottomDelay = 500L,
-            fallDelay = 250L,
-            dashStartDelay = 160L,
-            dashLoopDelay = 333L,
-            climbDelay = 333L,
-            customDelay = 200L
-        )
-    )
+    // ✅ Danh sách nhân vật sẽ được load từ JSON
+    private val _availableCharacters = MutableStateFlow<List<CharacterData>>(emptyList())
+    val availableCharacters: StateFlow<List<CharacterData>> = _availableCharacters.asStateFlow()
     
-    // Danh sách tất cả nhân vật có sẵn
-    val availableCharacters = listOf(
-        vampireCharacter,
-        shimejiCharacter,
-        // Bạn có thể thêm nhân vật mới ở đây
-        CharacterData(
-            id = "goku",
-            name = "Son Goku",
-            previewImage = R.drawable.songoku, // Sử dụng ảnh có sẵn làm preview
-            spriteAnimations = SpriteAnimations(
-                // Tạm thời dùng lại ảnh của shimeji, bạn có thể thay thế
-                idleImages = listOf(R.drawable.songoku),
-                walkingImages = listOf(R.drawable.songoku),
-                touchImages = listOf(R.drawable.songoku),
-                fallImages = listOf(R.drawable.songoku),
-                bottomImages = listOf(R.drawable.songoku),
-                dashImages = listOf(R.drawable.songoku),
-                climbImages = listOf(R.drawable.songoku),
-                customImages = listOf(R.drawable.songoku)
-            ),
-            animationTimings = AnimationTimings(
-                idleDelay = 800L, // Khác với vampire
-                walkingDelay = 200L,
-                dashStartDelay = 100L
-            )
-        )
-    )
-    
-    // Nhân vật hiện tại được chọn (mặc định là vampire)
-    private val _currentCharacter = MutableStateFlow(vampireCharacter)
+    // Nhân vật hiện tại được chọn (mặc định là placeholder)
+    private val _currentCharacter = MutableStateFlow(placeholderCharacter)
     val currentCharacter: StateFlow<CharacterData> = _currentCharacter.asStateFlow()
+    
+    /**
+     * Load danh sách nhân vật từ JSON
+     */
+    suspend fun loadCharactersFromJson(context: android.content.Context) {
+        val jsonData = com.example.demoshemij.util.JsonLoader.loadCharacterData(context)
+        
+        if (jsonData != null) {
+            val characters = mutableListOf<CharacterData>()
+            
+            jsonData.characters.forEach { characterMap ->
+                characterMap.forEach { (id, data) ->
+                    // Tạo CharacterData từ JSON
+                    val character = CharacterData(
+                        id = id,
+                        name = id.capitalize(),
+                        previewImage = android.R.drawable.ic_menu_report_image, // Sẽ load từ URL
+                        spriteAnimations = SpriteAnimations(
+                            idleImages = emptyList(), // Không cần nữa, dùng URL
+                            walkingImages = emptyList(),
+                            touchImages = emptyList(),
+                            fallImages = emptyList(),
+                            bottomImages = emptyList(),
+                            dashImages = emptyList(),
+                            climbImages = emptyList(),
+                            customImages = emptyList()
+                        ),
+                        animationTimings = AnimationTimings() // Timing từ JSON logic
+                    )
+                    characters.add(character)
+                }
+            }
+            
+            _availableCharacters.value = characters
+            
+            // Set character đầu tiên làm mặc định
+            if (characters.isNotEmpty()) {
+                _currentCharacter.value = characters.first()
+            }
+        }
+    }
     
     // Lấy nhân vật hiện tại (sync)
     fun getCurrentCharacter(): CharacterData = _currentCharacter.value
     
     // Thay đổi nhân vật
     fun setCurrentCharacter(characterId: String) {
-        availableCharacters.find { it.id == characterId }?.let {
+        _availableCharacters.value.find { it.id == characterId }?.let {
             _currentCharacter.value = it
         }
     }

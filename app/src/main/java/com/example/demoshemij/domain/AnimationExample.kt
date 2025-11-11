@@ -6,7 +6,9 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.example.demoshemij.util.JsonLoader
 
 /**
@@ -43,13 +45,18 @@ fun rememberAnimationController(
     characterName: String,
     animationName: String
 ): AnimationController? {
-    return remember(characterName, animationName) {
+    // ✅ Load data trong LaunchedEffect thay vì remember
+    var controller by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<AnimationController?>(null) }
+    
+    LaunchedEffect(characterName, animationName) {
         val characterData = JsonLoader.loadCharacterData(context)
         val character = characterData?.characters?.firstOrNull()?.get(characterName)
         val animationData = character?.animations?.get(animationName)
         
-        animationData?.let { AnimationController(it) }
+        controller = animationData?.let { AnimationController(it) }
     }
+    
+    return controller
 }
 
 /**

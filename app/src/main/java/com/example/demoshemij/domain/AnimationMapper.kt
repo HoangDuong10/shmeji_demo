@@ -27,6 +27,7 @@ object AnimationMapper {
     
     /**
      * Lấy AnimationController cho một state cụ thể
+     * ✅ Dùng sync version vì được gọi từ remember block
      */
     fun getControllerForState(
         context: Context,
@@ -36,7 +37,8 @@ object AnimationMapper {
         val animationName = mapStateToAnimationName(state)
         android.util.Log.d("AnimationMapper", "Getting controller for state: $state -> animation: $animationName")
         
-        val characterData = JsonLoader.loadCharacterData(context)
+        // ✅ Dùng sync version - chỉ lấy từ cache
+        val characterData = JsonLoader.loadCharacterDataSync(context)
         android.util.Log.d("AnimationMapper", "Character data loaded: ${characterData != null}")
         
         val character = characterData?.characters?.firstOrNull()?.get(characterName)
