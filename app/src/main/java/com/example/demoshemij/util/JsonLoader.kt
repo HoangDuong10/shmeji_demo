@@ -47,11 +47,11 @@ object JsonLoader {
         
         // 3. Fallback về local assets
         Log.w("JsonLoader", "Failed to load from URL, falling back to local assets")
-        val dataFromAssets = loadFromAssets(context)
-        if (dataFromAssets != null) {
-            cachedData = dataFromAssets
-            return dataFromAssets
-        }
+//        val dataFromAssets = loadFromAssets(context)
+//        if (dataFromAssets != null) {
+//            cachedData = dataFromAssets
+//            return dataFromAssets
+//        }
         
         return null
     }

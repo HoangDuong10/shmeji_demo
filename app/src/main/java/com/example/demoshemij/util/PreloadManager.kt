@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import coil.imageLoader
 import coil.memory.MemoryCache
+import coil.request.CachePolicy
 import coil.request.ImageRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -175,25 +176,25 @@ object PreloadManager {
                     val isInMemoryCache = memoryCache?.get(MemoryCache.Key(url)) != null
                     val isInDiskCache = diskCache?.get(url) != null
                     Log.d("PreloadManager", "isInMemoryCache : ${isInMemoryCache} +${isInDiskCache}")
-                    if (isInMemoryCache || isInDiskCache) {
-                        Log.d("PreloadManager", "Already cached: $url")
-                        // Đã có cache, bỏ qua
+                    if (isInMemoryCache) {
+                        Log.d("PreloadManager", "In memory, skip: $url")
                     } else {
                         try {
-                            // Chưa có cache, load mới
+                            // Dù có trong disk cache vẫn load để đưa lên memory
                             val request = ImageRequest.Builder(context)
                                 .data(url)
                                 .memoryCacheKey(url)
                                 .diskCacheKey(url)
+                                .memoryCachePolicy(CachePolicy.ENABLED)
+                                .diskCachePolicy(CachePolicy.READ_ONLY) // chỉ đọc disk cache, không tải lại mạng
                                 .build()
 
                             imageLoader.execute(request)
-                            Log.d("PreloadManager", "Preloaded: $url")
+                            Log.d("PreloadManager", "Loaded to memory: $url")
                         } catch (e: Exception) {
-                            Log.e("PreloadManager", "Failed to preload: $url", e)
+                            Log.e("PreloadManager", "Failed to load: $url", e)
                         }
                     }
-
                     // Update progress (0.2 -> 1.0)
                     _progress.value = 0.2f + (0.8f * (index + 1) / allImageUrls.size)
                 }
@@ -211,7 +212,7 @@ object PreloadManager {
             }
         }
     }
-    
+
     /**
      * Reset preload state (để force reload)
      */

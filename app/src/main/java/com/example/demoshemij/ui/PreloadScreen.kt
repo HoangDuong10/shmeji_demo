@@ -120,6 +120,6 @@ fun PreloadWrapper(
             onComplete = { showPreload = false }
         )
     } else {
-//        content()
+        content()
     }
 }
