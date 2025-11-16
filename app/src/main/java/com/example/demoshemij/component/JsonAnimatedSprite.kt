@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -15,9 +17,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
-import coil.size.Size
 import com.example.demoshemij.SpriteFlip1
 import com.example.demoshemij.SpriteState1
 import com.example.demoshemij.domain.AnimationController
@@ -160,20 +159,20 @@ fun JsonAnimatedSprite(
         }
     }
     
-    // ✅ Dùng Coil AsyncImage để load ảnh mượt mà
-    AsyncImage(
-        model = ImageRequest.Builder(context)
-            .data(fullImageUrl)
-            .crossfade(false) // Tắt crossfade để animation nhanh hơn
-            .size(Size.ORIGINAL) // Load full size
-            .memoryCacheKey(fullImageUrl) // Cache key
-            .diskCacheKey(fullImageUrl) // Disk cache key
-            .build(),
-        contentDescription = null,
-        contentScale = ContentScale.Fit,
-        modifier = Modifier
-            .size(150.dp * (755 / 688f))
-            .aspectRatio(755 / 688f)
+    // ✅ Lấy bitmap từ BitmapCache (đã preload sẵn trong memory)
+    val cachedBitmap = remember(fullImageUrl) {
+        fullImageUrl?.let { com.example.demoshemij.util.BitmapCache.get(it) }
+    }
+    
+    // ✅ Hiển thị bitmap từ cache (không nhấp nháy!)
+    if (cachedBitmap != null) {
+        Image(
+            bitmap = cachedBitmap,
+            contentDescription = null,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier
+                .size(150.dp * (755 / 688f))
+                .aspectRatio(755 / 688f)
             .offset(
                 x = when {
                     spriteFlip == SpriteFlip1.TOP ||
@@ -213,10 +212,24 @@ fun JsonAnimatedSprite(
                     }
                 }
             }
-    )
+        )
+    } else {
+        // ✅ Fallback: Nếu chưa có trong cache, hiển thị placeholder
+        Box(
+            modifier = Modifier
+                .size(150.dp * (755 / 688f))
+                .aspectRatio(755 / 688f),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("Loading...", style = MaterialTheme.typography.bodySmall)
+        }
+        
+        // Log warning
+        Log.w("JsonAnimatedSprite", "[$characterName] Image not in cache: $fullImageUrl")
+    }
     
     // ✅ Log để debug - KEY RIÊNG
     LaunchedEffect(key1 = "debug_$characterName", key2 = currentFrameId, key3 = frameUrl) {
-        Log.d("JsonAnimatedSprite", "[$characterName] State: $spriteState, Frame ID: $currentFrameId, URL: $frameUrl, Full URL: $fullImageUrl")
+        Log.d("JsonAnimatedSprite", "[$characterName] State: $spriteState, Frame ID: $currentFrameId, URL: $frameUrl, Full URL: $fullImageUrl, Cached: ${cachedBitmap != null}")
     }
 }

@@ -28,16 +28,29 @@ fun PreloadScreen(
     val progress by PreloadManager.progress.collectAsState()
     val currentTask by PreloadManager.currentTask.collectAsState()
     
+    var bitmapProgress by remember { mutableStateOf(0f) }
+    var bitmapTask by remember { mutableStateOf("") }
+    
     // Tự động bắt đầu preload khi màn hình hiển thị
     LaunchedEffect(Unit) {
         scope.launch {
-            PreloadManager.preloadAllImages(context)
+            // ✅ Dùng BitmapCache thay vì Coil để tránh nhấp nháy
+            com.example.demoshemij.util.BitmapCache.preloadAllImages(context)
+        }
+    }
+    
+    // ✅ Poll progress từ BitmapCache
+    LaunchedEffect(Unit) {
+        while (bitmapProgress < 1f) {
+            bitmapProgress = com.example.demoshemij.util.BitmapCache.currentProgress
+            bitmapTask = com.example.demoshemij.util.BitmapCache.currentTask
+            kotlinx.coroutines.delay(100)
         }
     }
     
     // Tự động chuyển màn hình khi hoàn thành
-    LaunchedEffect(progress) {
-        if (progress >= 1f && !isLoading) {
+    LaunchedEffect(bitmapProgress) {
+        if (bitmapProgress >= 1f) {
             kotlinx.coroutines.delay(500) // Đợi 0.5s để user thấy "Complete!"
             onComplete()
         }

@@ -184,9 +184,9 @@ object PreloadManager {
                             val request = ImageRequest.Builder(context)
                                 .data(url)
                                 .memoryCacheKey(url)
-                                .diskCacheKey(url)
+//                                .diskCacheKey(url)
                                 .memoryCachePolicy(CachePolicy.ENABLED)
-                                .diskCachePolicy(CachePolicy.READ_ONLY) // chỉ đọc disk cache, không tải lại mạng
+//                                .diskCachePolicy(CachePolicy.READ_ONLY) // chỉ đọc disk cache, không tải lại mạng
                                 .build()
 
                             imageLoader.execute(request)
