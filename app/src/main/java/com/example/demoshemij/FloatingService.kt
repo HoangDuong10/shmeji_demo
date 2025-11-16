@@ -555,6 +555,7 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                                 val targetY = -overflowTop + margin
                                 animateParamTo(instance, "y", targetY, 2000, false)
                             } else {
+                                Log.d("duonghx122","${instance.params.y} va $maxUpDistance")
                                 val targetX = screenWidth/3
                                 animateParamTo(instance, "x", targetX, 1000, true)
                             }
@@ -567,7 +568,8 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                             } else if (maxDownDistance > 0) {
                                 val targetY = screenHeight - spriteHeight - margin
                                 animateParamTo(instance, "y", targetY, 2000, false)
-                            } else {
+                            } else   {
+                                Log.d("duonghx122","${instance.params.y} va $maxDownDistance va $spriteHeight")
                                 val targetX = screenWidth/3
                                 animateParamTo(instance, "x", targetX, 1000, true)
                             }
@@ -716,13 +718,12 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
     }
 
     // ✅ Sửa fallDown để xử lý coroutine đúng cách
-    private fun fallDown(instance: SpriteInstance,isInitial: Boolean) {
+
+    private fun fallDown(instance: SpriteInstance, isInitial: Boolean) {
         instance.view.post {
-            // ✅ Cancel job cũ
             instance.moveJob?.cancel()
             instance.moveJob = null
 
-            // ✅ Tạo job mới trong lifecycleScope
             instance.moveJob = lifecycleScope.launch {
                 try {
                     val (_, screenHeight) = getScreenSize(this@FloatingSpriteService)
@@ -734,6 +735,11 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                     while (isActive && instance.params.y < groundY && !instance.isDragging) {
                         instance.params.y += 20
 
+                        // ✅ Clamp: nếu vượt quá thì set bằng groundY
+                        if (instance.params.y > groundY) {
+                            instance.params.y = groundY
+                        }
+
                         try {
                             windowManager.updateViewLayout(instance.view, instance.params)
                         } catch (e: IllegalArgumentException) {
@@ -741,26 +747,21 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
                             return@launch
                         }
 
+                        // ✅ Thoát loop nếu đã chạm đất
+                        if (instance.params.y >= groundY) break
+
                         delay(10)
                     }
-                    Log.d("ccccc","${groundY}")
-                    Log.d("cccc123c","${instance.params.y}")
-
 
                     if (!isActive || instance.isDragging) return@launch
 
-                    Log.d("FloatingService", "Setting state to IMPACT (Bottom), isInitial=$isInitial")
+                    // ✅ Đảm bảo vị trí cuối cùng chính xác
+                    instance.params.y = groundY
+                    windowManager.updateViewLayout(instance.view, instance.params)
+                    Log.d("duonghx122","fall  ${instance.params.y} ${spriteHeight} $groundY")
+                    Log.d("FloatingService", "Setting state to Bottom at y=${instance.params.y}")
                     instance.controller.setState(SpriteState1.Bottom)
-                    Log.d("FloatingService", "State set to Bottom, waiting for onImpactFinish callback...")
-//                    if(isInitial){
-//                        instance.controller.setState(SpriteState1.CUSTOM)
-//                    }else{
-//                        if (isActive && !instance.isDragging) {
-//                            animateSpriteWindow(instance)
-//                        }
-//                    }
-                    Log.d("bbbb","${instance.params.y}")
-                    Log.d("bbbb111","${instance.params.y}")
+
                 } catch (e: CancellationException) {
                     Log.d("FloatingSprite", "Fall animation cancelled")
                     throw e
@@ -770,6 +771,61 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
             }
         }
     }
+//    private fun fallDown(instance: SpriteInstance,isInitial: Boolean) {
+//        instance.view.post {
+//            val overflowV = instance.getOverflowVertical(this@FloatingSpriteService)
+//            // ✅ Cancel job cũ
+//            instance.moveJob?.cancel()
+//            instance.moveJob = null
+//
+//            // ✅ Tạo job mới trong lifecycleScope
+//            instance.moveJob = lifecycleScope.launch {
+//                try {
+//                    val (_, screenHeight) = getScreenSize(this@FloatingSpriteService)
+//                    val spriteHeight = instance.view.height
+//                    val groundY = screenHeight - spriteHeight
+//
+//                    instance.controller.setState(SpriteState1.FALL)
+//
+//                    while (isActive && instance.params.y < groundY && !instance.isDragging) {
+//                        instance.params.y += 20
+////                        instance.params.y += 1
+//
+//                        try {
+//                            windowManager.updateViewLayout(instance.view, instance.params)
+//                        } catch (e: IllegalArgumentException) {
+//                            Log.e("FloatingSprite", "Failed to update view during fall", e)
+//                            return@launch
+//                        }
+//
+//                        delay(10)
+//                    }
+//                    Log.d("ccccc","${groundY}")
+//                    Log.d("cccc123c","${instance.params.y}")
+//
+//
+//                    if (!isActive || instance.isDragging) return@launch
+//
+//                    Log.d("FloatingService", "Setting state to IMPACT (Bottom), isInitial=$isInitial")
+//                    instance.controller.setState(SpriteState1.Bottom)
+//                    Log.d("FloatingService", "State set to Bottom, waiting for onImpactFinish callback...")
+////                    if(isInitial){
+////                        instance.controller.setState(SpriteState1.CUSTOM)
+////                    }else{
+////                        if (isActive && !instance.isDragging) {
+////                            animateSpriteWindow(instance)
+////                        }
+////                    }
+//                    Log.d("duonghx122","fall  ${instance.params.y} ${spriteHeight} $groundY")
+//                } catch (e: CancellationException) {
+//                    Log.d("FloatingSprite", "Fall animation cancelled")
+//                    throw e
+//                } catch (e: Exception) {
+//                    Log.e("FloatingSprite", "Fall animation error", e)
+//                }
+//            }
+//        }
+//    }
 
     private suspend fun awaitViewMeasured(view: View): Int = suspendCancellableCoroutine { cont ->
         if (view.height > 0) {
