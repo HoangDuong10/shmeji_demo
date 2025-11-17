@@ -1,5 +1,6 @@
 package com.example.demoshemij
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -85,6 +86,8 @@ class MainActivity : ComponentActivity() {
                 // ✅ Thêm PreloadWrapper để preload ảnh từ URL trước
                 com.example.demoshemij.ui.PreloadWrapper {
                     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+//                        val test = isFloatingSpriteServiceRunning(this)
+                        Log.d("duonghx123","${FloatingSpriteService.isRunningInApp}")
                         MainScreen(
                             modifier = Modifier.padding(innerPadding),
                             onAddSprite = { startFloatingService("ADD_SPRITE") },
@@ -125,7 +128,16 @@ class MainActivity : ComponentActivity() {
             startService(serviceIntent)
         }
     }
-
+//    fun isFloatingSpriteServiceRunning(context: Context): Boolean {
+//        val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+//        @Suppress("DEPRECATION")
+//        for (service in manager.getRunningServices(Int.MAX_VALUE)) {
+//            if (service.service.className == FloatingSpriteService::class.java.name) {
+//                return true
+//            }
+//        }
+//        return false
+//    }
     @Composable
     fun MainScreen(
         modifier: Modifier = Modifier,

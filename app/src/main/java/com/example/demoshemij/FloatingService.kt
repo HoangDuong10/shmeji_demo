@@ -73,6 +73,7 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate() {
         super.onCreate()
+        isRunningInApp = true
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
         savedStateRegistryController.performRestore(null)
         startForegroundService()
@@ -170,7 +171,12 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
 
         startForeground(1, notification)
     }
-
+    fun hasAnySpriteRunning(): Boolean = spriteList.isNotEmpty()
+    companion object {
+        @Volatile
+        var isRunningInApp: Boolean = false
+            private set
+    }
     @SuppressLint("ClickableViewAccessibility")
     private fun addNewSprite(characterName: String = "vampire") {
         val (screenWidth, screenHeight) = getScreenSize(this@FloatingSpriteService)
@@ -867,6 +873,7 @@ class FloatingSpriteService : LifecycleService(), SavedStateRegistryOwner {
 
     // ✅ Cleanup khi service destroy
     override fun onDestroy() {
+        isRunningInApp = true
         stopAllSprites()
         super.onDestroy()
     }
